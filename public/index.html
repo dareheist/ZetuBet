@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101522">
+  <title>ZetuBet — Play the moment</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
+    <a class="brand" href="#" aria-label="ZetuBet home"><span class="brand-mark">Z</span><span>Zetu<span class="brand-accent">Bet</span></span></a>
+    <div class="top-actions">
+      <span class="demo-pill">DEMO</span>
+      <button class="btn btn-outline" id="loginBtn">Log in</button>
+      <button class="btn btn-primary" id="signupBtn">Join</button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="side-balance"><small>DEMO BALANCE</small><strong id="balanceSide">$1,000.00</strong><button class="btn btn-primary btn-full" id="addDemoBtn">＋ Add demo funds</button></div>
+    <nav>
+      <button class="nav-item active" data-page="sports">⚽ <span>Sports</span></button>
+      <button class="nav-item" data-page="casino">🎰 <span>Casino</span></button>
+      <button class="nav-item" data-page="aviator">🚀 <span>Crash game</span><span class="live-dot"></span></button>
+      <button class="nav-item" data-page="history">📋 <span>My activity</span></button>
+      <button class="nav-item" data-page="account">👤 <span>Account</span></button>
+    </nav>
+    <div class="sidebar-note">Demo mode only. No real money is accepted or paid out.</div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">WELCOME TO ZETUBET</span>
+        <h1>Feel the <span>moment.</span></h1>
+        <p>Sports, casino-style games and multiplier action — all in one place.</p>
+        <button class="btn btn-primary" data-go="sports">Explore games <span>→</span></button>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-one"></div><div class="orb orb-two"></div>
+        <div class="hero-card"><span>DEMO PLAY</span><strong>1.98×</strong><small>EXAMPLE MULTIPLIER</small></div>
+        <div class="hero-spark">✦</div>
+      </div>
+    </section>
+
+    <div class="summary-row">
+      <div class="summary-card"><span class="summary-icon">💳</span><div><small>Demo wallet</small><strong id="balanceMain">$1,000.00</strong></div></div>
+      <div class="summary-card"><span class="summary-icon">🎯</span><div><small>Demo plays</small><strong id="playCount">0</strong></div></div>
+      <div class="summary-card"><span class="summary-icon">🏆</span><div><small>Demo net result</small><strong id="netResult">$0.00</strong></div></div>
+    </div>
+
+    <section class="page-section" id="sportsPage">
+      <div class="section-heading"><div><span class="eyebrow">THE ACTION</span><h2>Sports <span>markets</span></h2></div><span class="section-tag">SAMPLE ODDS</span></div>
+      <div class="sport-tabs"><button class="sport-tab selected">⚽ Football</button><button class="sport-tab" disabled>🏀 Basketball · Soon</button><button class="sport-tab" disabled>🎾 Tennis · Soon</button></div>
+      <div id="matches" class="matches-grid"><div class="loading">Loading sample matches…</div></div>
+      <p class="fine-print">Sample fixtures and odds are for interface testing only. They are not live data.</p>
+    </section>
+
+    <section class="page-section hidden" id="casinoPage">
+      <div class="section-heading"><div><span class="eyebrow">TAKE A SPIN</span><h2>Casino <span>lounge</span></h2></div><span class="section-tag">DEMO GAMES</span></div>
+      <div class="game-grid">
+        <article class="game-card game-roulette"><div class="game-art">🎡</div><div class="game-card-body"><span class="game-label">TABLE GAME</span><h3>Lucky Wheel</h3><p>Try a virtual spin with demo credits.</p><button class="btn btn-primary btn-full" data-casino="wheel">Play demo</button></div></article>
+        <article class="game-card game-slots"><div class="game-art">🎰</div><div class="game-card-body"><span class="game-label">ARCADE</span><h3>Triple Spark</h3><p>Spin three reels for a demo result.</p><button class="btn btn-primary btn-full" data-casino="slots">Play demo</button></div></article>
+        <article class="game-card game-cards"><div class="game-art">🃏</div><div class="game-card-body"><span class="game-label">QUICK PLAY</span><h3>High Card</h3><p>Draw a card and test your luck.</p><button class="btn btn-primary btn-full" data-casino="cards">Play demo</button></div></article>
+      </div>
+    </section>
+
+    <section class="page-section hidden" id="aviatorPage">
+      <div class="section-heading"><div><span class="eyebrow">MULTIPLIER MODE</span><h2>Crash <span>flight</span></h2></div><span class="section-tag">SIMULATED ROUND</span></div>
+      <div class="crash-board">
+        <div class="crash-top"><span><i class="live-dot"></i> DEMO ROUND</span><span>Balance <strong id="crashBalance">$1,000.00</strong></span></div>
+        <div class="crash-stage" id="crashStage"><div class="stars"></div><div class="crash-multiplier" id="multiplier">1.00×</div><div class="flight-path"></div><div class="plane">✈</div><div class="crash-status" id="crashStatus">Place a demo stake to start</div></div>
+        <div class="crash-controls">
+          <label>Demo stake ($)<input id="crashStake" type="number" min="1" max="500" step="1" value="10"></label>
+          <label>Auto cash-out (×)<input id="autoCashout" type="number" min="1.1" max="100" step="0.1" placeholder="Optional"></label>
+          <button class="btn btn-primary" id="startCrash">Start demo round</button>
+          <button class="btn btn-success" id="cashout" disabled>Cash out</button>
+        </div>
+        <p class="fine-print">The multiplier and outcome are randomly simulated for demo play. This is not a real-money game.</p>
+      </div>
+    </section>
+
+    <section class="page-section hidden" id="historyPage">
+      <div class="section-heading"><div><span class="eyebrow">YOUR SESSION</span><h2>Activity <span>history</span></h2></div></div>
+      <div class="history-panel"><div class="history-head"><span>Activity</span><span>Result</span><span>Time</span></div><div id="historyRows"><p class="empty-state">Your demo activity will appear here.</p></div></div>
+    </section>
+
+    <section class="page-section hidden" id="accountPage">
+      <div class="section-heading"><div><span class="eyebrow">PROFILE</span><h2>Your <span>account</span></h2></div></div>
+      <div class="account-panel"><div class="avatar">Z</div><div><h3>Guest player</h3><p>This starter version stores demo activity in this browser only.</p><span class="section-tag">DEMO ACCOUNT</span></div></div>
+      <div class="notice"><strong>Before launch</strong><p>Real-money betting, deposits and withdrawals are not enabled. Before adding them, obtain the applicable Kenyan gambling licence, confirm age and identity checks, and secure written approval from a payment provider for the betting use case.</p></div>
+    </section>
+
+    <footer><span>© 2026 ZetuBet</span><span>Demo platform · Play responsibly</span></footer>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal">
+      <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+      <span class="eyebrow">ZETUBET ACCOUNT</span><h2 id="modalTitle">Welcome back</h2>
+      <p id="modalDescription">Account creation and secure authentication will be added in the next build step.</p>
+      <label>Email address<input type="email" placeholder="you@example.com" disabled></label>
+      <label>Password<input type="password" placeholder="At least 8 characters" disabled></label>
+      <button class="btn btn-primary btn-full" id="modalOk">Got it</button>
+      <p class="fine-print">This starter build does not collect or store login credentials.</p>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
