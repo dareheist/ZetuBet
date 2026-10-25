@@ -1,572 +1,602 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZetuBet | Sports & Gaming</title>
+    <!-- ========================================== -->
+    <!-- SECTION 1: DOCUMENT CONFIGURATION          -->
+    <!-- ========================================== -->
 
-<style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101512">
 
-:root {
-  --bg: #101312;
-  --panel: #1b201e;
-  --panel2: #252c29;
-  --green: #20d878;
-  --text: #ffffff;
-  --muted: #aab4ae;
-}
+    <title>ZetuBet | Sports & Games</title>
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, sans-serif;
-  padding-bottom: 78px;
-}
+    <!-- ========================================== -->
+    <!-- SECTION 2: CSS CONNECTION                  -->
+    <!-- ========================================== -->
 
-header {
-  background: #171c19;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 1px solid #303833;
-}
-
-.logo {
-  font-size: 24px;
-  font-weight: 900;
-  color: var(--green);
-}
-
-.balance {
-  background: var(--panel2);
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-}
-
-.balance strong {
-  color: var(--green);
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  font-weight: bold;
-}
-
-.primary {
-  background: var(--green);
-  color: #07160d;
-  padding: 11px 13px;
-  border-radius: 7px;
-}
-
-.page {
-  display: none;
-  padding: 15px;
-}
-
-.page.active {
-  display: block;
-}
-
-.welcome {
-  background: linear-gradient(120deg, #173d2a, #1c2821);
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 18px;
-}
-
-.welcome h1 {
-  font-size: 23px;
-  margin-bottom: 8px;
-}
-
-.welcome p {
-  color: #d0ddd4;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.section-title {
-  font-size: 18px;
-  margin: 20px 0 12px;
-}
-
-.quick-games {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.game-icon {
-  background: var(--panel);
-  padding: 15px 4px;
-  border-radius: 10px;
-  text-align: center;
-  cursor: pointer;
-  border: 1px solid #303833;
-}
-
-.game-icon span {
-  display: block;
-  font-size: 25px;
-  margin-bottom: 7px;
-}
-
-.game-icon small {
-  font-size: 11px;
-}
-
-.sport-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 5px;
-}
-
-.sport-tabs button {
-  white-space: nowrap;
-  background: var(--panel2);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 7px;
-}
-
-.sport-tabs button.selected {
-  background: var(--green);
-  color: #07160d;
-}
-
-.match {
-  background: var(--panel);
-  border: 1px solid #303833;
-  padding: 13px;
-  border-radius: 10px;
-  margin-bottom: 12px;
-}
-
-.league {
-  color: var(--muted);
-  font-size: 11px;
-  margin-bottom: 12px;
-}
-
-.teams {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-  margin-bottom: 13px;
-}
-
-.odds {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-}
-
-.odd {
-  background: #303833;
-  color: white;
-  border-radius: 6px;
-  padding: 12px 4px;
-  font-size: 12px;
-}
-
-.odd strong {
-  display: block;
-  color: var(--green);
-  margin-top: 5px;
-  font-size: 14px;
-}
-
-.odd.chosen {
-  background: var(--green);
-  color: #07160d;
-}
-
-.odd.chosen strong {
-  color: #07160d;
-}
-
-.notice {
-  background: #292e2b;
-  padding: 12px;
-  color: var(--muted);
-  font-size: 12px;
-  border-radius: 8px;
-  margin-top: 14px;
-  line-height: 1.5;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #171c19;
-  border-top: 1px solid #303833;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
-  z-index: 20;
-}
-
-.nav-item {
-  color: #aab4ae;
-  background: transparent;
-  font-size: 10px;
-  padding: 4px 0;
-}
-
-.nav-item span {
-  display: block;
-  font-size: 21px;
-  margin-bottom: 4px;
-}
-
-.nav-item.active {
-  color: var(--green);
-}
-
-.form-input {
-  width: 100%;
-  padding: 13px;
-  background: var(--panel2);
-  color: white;
-  border: 1px solid #3b443e;
-  border-radius: 7px;
-  margin: 10px 0;
-}
-
-.action-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.action-row button {
-  flex: 1;
-}
-
-@media (min-width: 700px) {
-  .page, header {
-    padding-left: max(20px, calc((100% - 900px) / 2));
-    padding-right: max(20px, calc((100% - 900px) / 2));
-  }
-
-  .matches-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .bottom-nav {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 900px;
-  }
-}
-</style>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
 
-<header>
-  <div class="logo">ZetuBet</div>
-  <div class="balance">
-    Demo balance: <strong id="balance">KSh 10,000</strong>
-  </div>
-</header>
+    <!-- ========================================== -->
+    <!-- SECTION 3: WEBSITE HEADER                  -->
+    <!-- ========================================== -->
 
-<!-- HOME -->
-<main id="home" class="page active">
+    <header id="site-header" class="site-header">
 
-  <section class="welcome">
-    <h1>Welcome to ZetuBet</h1>
-    <p>Explore sports, check match odds and discover your favourite games.</p>
-  </section>
+        <button
+            type="button"
+            id="menu-button"
+            class="icon-button"
+            aria-label="Open menu"
+            aria-controls="side-menu"
+            aria-expanded="false">
+            ☰
+        </button>
 
-  <h2 class="section-title">Explore</h2>
+        <a href="/" class="site-logo" aria-label="ZetuBet Home">
+            Zetu<span>Bet</span>
+        </a>
 
-  <div class="quick-games">
-    <div class="game-icon" onclick="openPage('sports')">
-      <span>⚽</span><small>Sports</small>
-    </div>
+        <button
+            type="button"
+            class="header-login-button"
+            data-page="account">
+            Login
+        </button>
 
-    <div class="game-icon" onclick="openPage('aviator')">
-      <span>✈️</span><small>Aviator</small>
-    </div>
+    </header>
 
-    <div class="game-icon" onclick="openPage('casino')">
-      <span>🎰</span><small>Casino</small>
-    </div>
 
-    <div class="game-icon" onclick="openPage('wallet')">
-      <span>💰</span><small>Wallet</small>
-    </div>
-  </div>
+    <!-- ========================================== -->
+    <!-- SECTION 4: SIDE MENU                       -->
+    <!-- ========================================== -->
 
-  <h2 class="section-title">Popular sports</h2>
+    <div id="menu-overlay" class="menu-overlay" hidden></div>
 
-  <div class="sport-tabs">
-    <button class="selected" onclick="filterSport('all',this)">Popular</button>
-    <button onclick="filterSport('Football',this)">Football</button>
-    <button onclick="filterSport('Basketball',this)">Basketball</button>
-  </div>
+    <aside id="side-menu" class="side-menu" aria-label="Main menu" hidden>
 
-  <div id="home-matches" class="matches-grid"></div>
+        <div class="side-menu-header">
+            <span class="site-logo">Zetu<span>Bet</span></span>
 
-  <div class="notice">
-    Demonstration interface. The displayed matches and odds are sample data,
-    not live betting markets.
-  </div>
-</main>
+            <button
+                type="button"
+                id="close-menu-button"
+                class="icon-button"
+                aria-label="Close menu">
+                ✕
+            </button>
+        </div>
 
-<!-- SPORTS -->
-<section id="sports" class="page">
-  <h2 class="section-title">⚽ Sports</h2>
-  <p style="color:#aab4ae;font-size:13px;margin-bottom:15px">
-    Browse matches and sample odds.
-  </p>
+        <nav class="side-menu-links" aria-label="Main sections">
 
-  <div class="sport-tabs">
-    <button class="selected" onclick="filterSport('all',this)">All</button>
-    <button onclick="filterSport('Football',this)">Football</button>
-    <button onclick="filterSport('Basketball',this)">Basketball</button>
-  </div>
+            <button type="button" data-page="home">🏠 Home</button>
+            <button type="button" data-page="sports">⚽ Sports</button>
+            <button type="button" data-page="aviator">✈️ Aviator</button>
+            <button type="button" data-page="casino">🎰 Casino</button>
+            <button type="button" data-page="wallet">💰 Wallet</button>
+            <button type="button" data-page="history">📜 Bet History</button>
+            <button type="button" data-page="account">👤 Account</button>
+            <button type="button" data-page="settings">⚙️ Settings</button>
 
-  <div id="sports-matches" style="margin-top:15px"></div>
+        </nav>
 
-  <h3 class="section-title">Bet slip</h3>
-  <div id="betslip" class="match">
-    <p style="color:#aab4ae;font-size:13px">Select an odds button to add a selection.</p>
-  </div>
-</section>
+        <div class="side-menu-footer">
+            ZetuBet
+        </div>
 
-<!-- AVIATOR -->
-<section id="aviator" class="page">
-  <h2 class="section-title">✈️ Aviator</h2>
-  <div class="match">
-    <p style="margin-bottom:10px">Open your Aviator game below.</p>
-    <button class="primary" onclick="window.location.href='/aviator.html'">
-      Open Aviator
-    </button>
-  </div>
-</section>
+    </aside>
 
-<!-- CASINO -->
-<section id="casino" class="page">
-  <h2 class="section-title">🎰 Casino</h2>
-  <div class="match">
-    <h3>Casino games</h3>
-    <p style="color:#aab4ae;margin-top:10px;font-size:13px">
-      The casino section is ready for its game cards to be added.
-    </p>
-  </div>
-</section>
 
-<!-- WALLET -->
-<section id="wallet" class="page">
-  <h2 class="section-title">💰 Wallet</h2>
-  <div class="match">
-    <p style="color:#aab4ae">Demo wallet balance</p>
-    <h2 style="color:#20d878;margin:12px 0" id="wallet-balance">KSh 10,000</h2>
-    <div class="notice">
-      Deposits and withdrawals are not connected yet. No real money is processed.
-    </div>
-  </div>
-</section>
+    <!-- ========================================== -->
+    <!-- SECTION 5: MAIN PAGE CONTAINER             -->
+    <!-- ========================================== -->
 
-<!-- HISTORY -->
-<section id="history" class="page">
-  <h2 class="section-title">📜 Betting history</h2>
-  <div class="match">
-    <p style="color:#aab4ae;font-size:13px">
-      Your demo betting history will appear here when the history feature is added.
-    </p>
-  </div>
-</section>
+    <main id="main-content" class="main-content">
 
-<!-- ACCOUNT -->
-<section id="account" class="page">
-  <h2 class="section-title">👤 Account</h2>
-  <div class="match">
-    <h3>ZetuBet account</h3>
-    <p style="color:#aab4ae;margin-top:10px;font-size:13px">
-      Account registration, login and settings will be connected in a later step.
-    </p>
-  </div>
-</section>
 
-<nav class="bottom-nav">
-  <button class="nav-item active" data-page="home" onclick="openPage('home')">
-    <span>🏠</span>Home
-  </button>
-  <button class="nav-item" data-page="sports" onclick="openPage('sports')">
-    <span>⚽</span>Sports
-  </button>
-  <button class="nav-item" data-page="aviator" onclick="openPage('aviator')">
-    <span>✈️</span>Aviator
-  </button>
-  <button class="nav-item" data-page="wallet" onclick="openPage('wallet')">
-    <span>💰</span>Wallet
-  </button>
-  <button class="nav-item" data-page="account" onclick="openPage('account')">
-    <span>👤</span>Account
-  </button>
-</nav>
+        <!-- ====================================== -->
+        <!-- SECTION 6: HOMEPAGE                    -->
+        <!-- ====================================== -->
 
-<script>
-const matches = [
-  {
-    id: 1,
-    sport: "Football",
-    league: "SAMPLE FOOTBALL MATCH",
-    home: "Home Team",
-    away: "Away Team",
-    odds: ["2.10", "3.20", "2.80"]
-  },
-  {
-    id: 2,
-    sport: "Football",
-    league: "SAMPLE FOOTBALL MATCH",
-    home: "United FC",
-    away: "City FC",
-    odds: ["1.85", "3.40", "3.60"]
-  },
-  {
-    id: 3,
-    sport: "Basketball",
-    league: "SAMPLE BASKETBALL MATCH",
-    home: "Lions",
-    away: "Tigers",
-    odds: ["1.75", "—", "2.05"]
-  }
-];
+        <section id="page-home" class="page active">
 
-let selectedBets = [];
-let currentFilter = "all";
+            <!-- SECTION 6A: WELCOME BANNER -->
 
-function openPage(page) {
-  document.querySelectorAll(".page").forEach(section => {
-    section.classList.toggle("active", section.id === page);
-  });
+            <div class="welcome-banner">
+                <div>
+                    <p class="eyebrow">WELCOME TO</p>
+                    <h1>ZetuBet</h1>
+                    <p>Sports, excitement and games in one place.</p>
+                </div>
 
-  document.querySelectorAll(".nav-item").forEach(button => {
-    button.classList.toggle("active", button.dataset.page === page);
-  });
+                <div class="welcome-icon" aria-hidden="true">🏆</div>
+            </div>
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
 
-function filterSport(sport, button) {
-  currentFilter = sport;
+            <!-- SECTION 6B: WALLET SUMMARY -->
 
-  document.querySelectorAll(".sport-tabs button").forEach(item => {
-    item.classList.remove("selected");
-  });
+            <button
+                type="button"
+                class="wallet-summary"
+                data-page="wallet">
 
-  button.classList.add("selected");
-  renderMatches();
-}
+                <span class="wallet-summary-icon">💰</span>
 
-function renderMatches() {
-  const filtered = currentFilter === "all"
-    ? matches
-    : matches.filter(match => match.sport === currentFilter);
+                <span class="wallet-summary-text">
+                    <small>MY BALANCE</small>
+                    <strong id="header-balance">KSh 0.00</strong>
+                </span>
 
-  const html = filtered.map(match => `
-    <article class="match">
-      <div class="league">${match.league}</div>
-      <div class="teams">
-        <span>${match.home}</span>
-        <span>vs</span>
-        <span>${match.away}</span>
-      </div>
-      <div class="odds">
-        ${["Home", "Draw", "Away"].map((label, index) => {
-          const odd = match.odds[index];
-          if (odd === "—") {
-            return `<button class="odd" disabled>${label}<strong>—</strong></button>`;
-          }
+                <span class="wallet-summary-action">View wallet ›</span>
 
-          const chosen = selectedBets.some(
-            bet => bet.id === match.id && bet.outcome === label
-          );
+            </button>
 
-          return `
-            <button class="odd ${chosen ? "chosen" : ""}"
-              onclick="selectBet(${match.id},'${label}')">
-              ${label}<strong>${odd}</strong>
-            </button>`;
-        }).join("")}
-      </div>
-    </article>
-  `).join("");
 
-  document.getElementById("home-matches").innerHTML = html;
-  document.getElementById("sports-matches").innerHTML = html;
+            <!-- SECTION 6C: QUICK ACCESS GAMES -->
 
-  renderBetslip();
-}
+            <section class="content-section" aria-labelledby="games-heading">
 
-function selectBet(id, outcome) {
-  const match = matches.find(item => item.id === id);
-  const existing = selectedBets.findIndex(bet => bet.id === id);
+                <div class="section-heading">
+                    <h2 id="games-heading">Explore</h2>
+                </div>
 
-  if (existing >= 0 && selectedBets[existing].outcome === outcome) {
-    selectedBets.splice(existing, 1);
-  } else {
-    if (existing >= 0) selectedBets.splice(existing, 1);
+                <div class="quick-access-grid">
 
-    selectedBets.push({
-      id,
-      home: match.home,
-      away: match.away,
-      outcome,
-      odd: match.odds[["Home", "Draw", "Away"].indexOf(outcome)]
-    });
-  }
+                    <button type="button" class="quick-access-card" data-page="sports">
+                        <span class="quick-access-icon">⚽</span>
+                        <span>Sports</span>
+                    </button>
 
-  renderMatches();
-}
+                    <button type="button" class="quick-access-card" data-page="aviator">
+                        <span class="quick-access-icon">✈️</span>
+                        <span>Aviator</span>
+                    </button>
 
-function renderBetslip() {
-  const slip = document.getElementById("betslip");
+                    <button type="button" class="quick-access-card" data-page="casino">
+                        <span class="quick-access-icon">🎰</span>
+                        <span>Casino</span>
+                    </button>
 
-  if (!selectedBets.length) {
-    slip.innerHTML = `
-      <p style="color:#aab4ae;font-size:13px">
-        Select an odds button to add a selection.
-      </p>`;
-    return;
-  }
+                    <button type="button" class="quick-access-card" data-page="history">
+                        <span class="quick-access-icon">📜</span>
+                        <span>My Bets</span>
+                    </button>
 
-  slip.innerHTML = selectedBets.map(bet => `
-    <p style="font-size:13px;margin-bottom:10px">
-      ${bet.home} vs ${bet.away}<br>
-      <span style="color:#20d878">${bet.outcome} · ${bet.odd}</span>
-    </p>
-  `).join("") + `
-    <div class="notice">
-      Demo bet slip only. Placing real-money bets is not enabled.
-    </div>`;
-}
+                </div>
 
-renderMatches();
-</script>
+            </section>
+
+
+            <!-- SECTION 6D: SPORTS CATEGORY FILTERS -->
+
+            <section class="content-section" aria-labelledby="sports-heading">
+
+                <div class="section-heading">
+                    <h2 id="sports-heading">Sports</h2>
+
+                    <button
+                        type="button"
+                        class="text-button"
+                        data-page="sports">
+                        View all ›
+                    </button>
+                </div>
+
+                <div class="sports-filter-list" id="home-sports-filters">
+
+                    <button type="button" class="sport-filter active" data-sport="all">
+                        🔥 Popular
+                    </button>
+
+                    <button type="button" class="sport-filter" data-sport="Football">
+                        ⚽ Football
+                    </button>
+
+                    <button type="button" class="sport-filter" data-sport="Basketball">
+                        🏀 Basketball
+                    </button>
+
+                    <button type="button" class="sport-filter" data-sport="Tennis">
+                        🎾 Tennis
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- SECTION 6E: FEATURED MATCHES -->
+
+            <section class="content-section" aria-labelledby="featured-heading">
+
+                <div class="section-heading">
+                    <h2 id="featured-heading">Featured matches</h2>
+                </div>
+
+                <div id="home-matches" class="matches-container">
+
+                    <div class="empty-state">
+                        <span>⚽</span>
+                        <p>Matches will appear here when sports data is connected.</p>
+                    </div>
+
+                </div>
+
+                <p class="data-notice">
+                    Match listings and odds must come from a verified sports data provider.
+                    No live odds are displayed until that connection is configured.
+                </p>
+
+            </section>
+
+
+            <!-- SECTION 6F: FEATURED AVIATOR CARD -->
+
+            <section class="content-section" aria-labelledby="aviator-feature-heading">
+
+                <button
+                    type="button"
+                    class="featured-game-card aviator-feature"
+                    data-page="aviator">
+
+                    <span class="featured-game-icon">✈️</span>
+
+                    <span class="featured-game-copy">
+                        <strong id="aviator-feature-heading">Aviator</strong>
+                        <small>Open the Aviator game</small>
+                    </span>
+
+                    <span class="featured-game-arrow">›</span>
+
+                </button>
+
+            </section>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 7: SPORTS PAGE                 -->
+        <!-- ====================================== -->
+
+        <section id="page-sports" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>⚽ Sports</h1>
+                <p>Explore matches and available markets.</p>
+            </div>
+
+            <!-- SECTION 7A: SPORTS FILTERS -->
+
+            <div class="sports-filter-list" id="sports-page-filters">
+
+                <button type="button" class="sport-filter active" data-sport="all">
+                    All sports
+                </button>
+
+                <button type="button" class="sport-filter" data-sport="Football">
+                    ⚽ Football
+                </button>
+
+                <button type="button" class="sport-filter" data-sport="Basketball">
+                    🏀 Basketball
+                </button>
+
+                <button type="button" class="sport-filter" data-sport="Tennis">
+                    🎾 Tennis
+                </button>
+
+            </div>
+
+
+            <!-- SECTION 7B: MATCH LIST -->
+
+            <div id="sports-matches" class="matches-container">
+
+                <div class="empty-state">
+                    <span>🏟️</span>
+                    <p>Sports matches will appear here once a sports data provider is connected.</p>
+                </div>
+
+            </div>
+
+
+            <!-- SECTION 7C: BET SLIP -->
+
+            <section class="content-section" aria-labelledby="betslip-heading">
+
+                <div class="section-heading">
+                    <h2 id="betslip-heading">Bet slip</h2>
+                    <span id="betslip-count" class="count-badge">0</span>
+                </div>
+
+                <div id="betslip-content" class="betslip-content">
+                    <p>Your selections will appear here.</p>
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 8: AVIATOR PAGE                -->
+        <!-- ====================================== -->
+
+        <section id="page-aviator" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>✈️ Aviator</h1>
+                <p>Your dedicated Aviator game page.</p>
+            </div>
+
+            <!-- SECTION 8A: AVIATOR GAME MOUNT POINT -->
+
+            <div id="aviator-game-container" class="aviator-game-container">
+
+                <div class="empty-state">
+                    <span>✈️</span>
+                    <p>The new Aviator game will be built in its own files.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 9: CASINO PAGE                 -->
+        <!-- ====================================== -->
+
+        <section id="page-casino" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>🎰 Casino</h1>
+                <p>Explore the casino section.</p>
+            </div>
+
+            <!-- SECTION 9A: CASINO GAME LIST -->
+
+            <div id="casino-games" class="casino-games-container">
+
+                <div class="empty-state">
+                    <span>🎮</span>
+                    <p>Casino games will be added here.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 10: WALLET PAGE                -->
+        <!-- ====================================== -->
+
+        <section id="page-wallet" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>💰 Wallet</h1>
+                <p>Manage your account balance.</p>
+            </div>
+
+            <!-- SECTION 10A: AVAILABLE BALANCE -->
+
+            <div class="wallet-balance-card">
+
+                <span>Available balance</span>
+
+                <strong id="wallet-page-balance">KSh 0.00</strong>
+
+                <small>Displayed balance will be connected to the account system.</small>
+
+            </div>
+
+
+            <!-- SECTION 10B: DEPOSIT AND WITHDRAW ACTIONS -->
+
+            <div class="wallet-actions">
+
+                <button type="button" class="primary-button" data-wallet-action="deposit">
+                    ↓ Deposit
+                </button>
+
+                <button type="button" class="secondary-button" data-wallet-action="withdraw">
+                    ↑ Withdraw
+                </button>
+
+            </div>
+
+
+            <!-- SECTION 10C: WALLET TRANSACTIONS -->
+
+            <section class="content-section">
+
+                <h2>Recent transactions</h2>
+
+                <div id="wallet-transactions" class="empty-state">
+                    <span>🧾</span>
+                    <p>Your transactions will appear here when the wallet backend is connected.</p>
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 11: BETTING HISTORY PAGE       -->
+        <!-- ====================================== -->
+
+        <section id="page-history" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>📜 Betting history</h1>
+                <p>Review your previous bets and results.</p>
+            </div>
+
+            <!-- SECTION 11A: HISTORY FILTERS -->
+
+            <div class="history-filters">
+
+                <button type="button" class="history-filter active" data-history-filter="all">
+                    All
+                </button>
+
+                <button type="button" class="history-filter" data-history-filter="settled">
+                    Settled
+                </button>
+
+                <button type="button" class="history-filter" data-history-filter="pending">
+                    Pending
+                </button>
+
+            </div>
+
+
+            <!-- SECTION 11B: HISTORY LIST -->
+
+            <div id="bet-history-list" class="history-list">
+
+                <div class="empty-state">
+                    <span>📋</span>
+                    <p>Your betting history will appear here when connected to the backend.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 12: ACCOUNT PAGE               -->
+        <!-- ====================================== -->
+
+        <section id="page-account" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>👤 My Account</h1>
+                <p>Sign in or create your ZetuBet account.</p>
+            </div>
+
+            <!-- SECTION 12A: LOGIN AND REGISTRATION -->
+
+            <div id="account-panel" class="account-panel">
+
+                <div class="account-tabs">
+
+                    <button type="button" class="account-tab active" data-account-tab="login">
+                        Login
+                    </button>
+
+                    <button type="button" class="account-tab" data-account-tab="register">
+                        Create account
+                    </button>
+
+                </div>
+
+
+                <!-- SECTION 12B: ACCOUNT FORM MOUNT POINT -->
+
+                <div id="account-form-container">
+
+                    <p class="empty-state">
+                        Login and registration will be connected to the secure account backend.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 13: SETTINGS PAGE              -->
+        <!-- ====================================== -->
+
+        <section id="page-settings" class="page" hidden>
+
+            <div class="page-heading">
+                <h1>⚙️ Settings</h1>
+                <p>Website preferences.</p>
+            </div>
+
+            <div class="settings-list">
+
+                <div class="settings-row">
+                    <span>Currency</span>
+                    <strong>KSh (KES)</strong>
+                </div>
+
+                <div class="settings-row">
+                    <span>Theme</span>
+                    <strong>Dark</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================== -->
+        <!-- SECTION 14: GENERAL NOTIFICATION        -->
+        <!-- ====================================== -->
+
+        <div
+            id="site-notification"
+            class="site-notification"
+            role="status"
+            aria-live="polite"
+            hidden>
+        </div>
+
+    </main>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 15: FIXED BOTTOM NAVIGATION       -->
+    <!-- ========================================== -->
+
+    <nav class="bottom-navigation" aria-label="Main navigation">
+
+        <button type="button" class="bottom-nav-item active" data-page="home">
+            <span class="bottom-nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-page="sports">
+            <span class="bottom-nav-icon">⚽</span>
+            <span>Sports</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-page="aviator">
+            <span class="bottom-nav-icon">✈️</span>
+            <span>Aviator</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-page="wallet">
+            <span class="bottom-nav-icon">💰</span>
+            <span>Wallet</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-page="account">
+            <span class="bottom-nav-icon">👤</span>
+            <span>Account</span>
+        </button>
+
+    </nav>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 16: JAVASCRIPT CONNECTION          -->
+    <!-- ========================================== -->
+
+    <script src="/app.js" defer></script>
 
 </body>
 </html>
