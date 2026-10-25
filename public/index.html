@@ -3,321 +3,570 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZetuBet Aviator</title>
+<title>ZetuBet | Sports & Gaming</title>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#101216;color:#fff;font-family:Arial,sans-serif}
-button,input{font:inherit}
-button{cursor:pointer;border:0}
-.topbar{height:58px;background:#191c22;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
-.logo{font-size:23px;font-weight:900;color:#ff334b}
-.logo span{color:#fff}
-.balance{background:#292d35;padding:10px 13px;border-radius:7px;font-weight:bold;color:#70e49a}
-.page{max-width:900px;margin:auto;padding:12px}
-.history{display:flex;gap:7px;overflow-x:auto;padding:7px 0 14px}
-.pill{background:#303441;color:#c6a0ff;padding:7px 10px;border-radius:5px;font-size:12px;white-space:nowrap;font-weight:bold}
-.pill.low{color:#69c8ff}
-.pill.mid{color:#bda0ff}
-.pill.high{color:#ff80ce}
-.game{height:300px;background:radial-gradient(ellipse at 25% 100%,#38202b 0%,#1b1b25 40%,#121419 80%);border:1px solid #30323b;border-radius:10px;position:relative;overflow:hidden}
-.game:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:35px 35px}
-.status{position:absolute;top:15px;left:0;right:0;text-align:center;font-size:12px;color:#a8aab5;z-index:2}
-.multiplier{position:absolute;top:75px;left:0;right:0;text-align:center;font-size:clamp(42px,10vw,68px);font-weight:900;z-index:2}
-.message{position:absolute;top:151px;left:0;right:0;text-align:center;color:#c7c8d0;font-size:13px;z-index:2}
-.flight{position:absolute;inset:0;width:100%;height:100%;z-index:1}
-.plane{position:absolute;left:8%;bottom:25px;font-size:34px;z-index:3;filter:drop-shadow(0 0 7px #ff334b);transform:rotate(-12deg)}
-.bets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.panel{background:#1b1e25;border-radius:10px;padding:12px;border:1px solid #30333c;min-width:0}
-.panel-title{font-size:14px;font-weight:bold;margin-bottom:12px}
-.stake-row{display:flex;gap:7px;align-items:center}
-.stake{width:100%;min-width:0;background:#111319;border:1px solid #414550;color:white;border-radius:6px;padding:11px 7px;text-align:center}
-.bet-button{width:100%;margin-top:10px;background:#22c875;color:#092517;border-radius:7px;padding:13px 4px;font-weight:900;font-size:14px}
-.bet-button.cashout{background:#ffca45;color:#302000}
-.bet-button:disabled{opacity:.55;cursor:not-allowed}
-.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
-.chip{flex:1;min-width:38px;background:#30343e;color:#e1e2e7;padding:7px 3px;border-radius:5px;font-size:11px}
-.chip:active{background:#555b68}
-.tabs{display:flex;gap:20px;border-bottom:1px solid #343741;margin-top:18px}
-.tab{padding:13px 4px;background:none;color:#9ea1ad;font-weight:bold}
-.tab.active{color:#fff;border-bottom:2px solid #ff344c}
-.list-heading,.bet-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:12px 7px;font-size:12px}
-.list-heading{color:#9296a4}
-.bet-row{background:#1a1d24;border-radius:6px;margin-top:5px;color:#e8e8ed}
-.bet-row span:nth-child(2),.bet-row span:nth-child(3){text-align:right}
-.win{color:#5be59b}
-.loss{color:#ff6276}
-.notice{font-size:11px;color:#858996;text-align:center;margin:15px 0}
-@media(max-width:420px){
- .page{padding:9px}
- .game{height:265px}
- .bets{gap:7px}
- .panel{padding:9px}
- .panel-title{font-size:12px}
- .bet-button{font-size:12px}
- .stake{font-size:13px}
- .chip{font-size:10px}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #101312;
+  --panel: #1b201e;
+  --panel2: #252c29;
+  --green: #20d878;
+  --text: #ffffff;
+  --muted: #aab4ae;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  padding-bottom: 78px;
+}
+
+header {
+  background: #171c19;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #303833;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--green);
+}
+
+.balance {
+  background: var(--panel2);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.balance strong {
+  color: var(--green);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+}
+
+.primary {
+  background: var(--green);
+  color: #07160d;
+  padding: 11px 13px;
+  border-radius: 7px;
+}
+
+.page {
+  display: none;
+  padding: 15px;
+}
+
+.page.active {
+  display: block;
+}
+
+.welcome {
+  background: linear-gradient(120deg, #173d2a, #1c2821);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.welcome h1 {
+  font-size: 23px;
+  margin-bottom: 8px;
+}
+
+.welcome p {
+  color: #d0ddd4;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.section-title {
+  font-size: 18px;
+  margin: 20px 0 12px;
+}
+
+.quick-games {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.game-icon {
+  background: var(--panel);
+  padding: 15px 4px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #303833;
+}
+
+.game-icon span {
+  display: block;
+  font-size: 25px;
+  margin-bottom: 7px;
+}
+
+.game-icon small {
+  font-size: 11px;
+}
+
+.sport-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.sport-tabs button {
+  white-space: nowrap;
+  background: var(--panel2);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 7px;
+}
+
+.sport-tabs button.selected {
+  background: var(--green);
+  color: #07160d;
+}
+
+.match {
+  background: var(--panel);
+  border: 1px solid #303833;
+  padding: 13px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.league {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.teams {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 13px;
+}
+
+.odds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.odd {
+  background: #303833;
+  color: white;
+  border-radius: 6px;
+  padding: 12px 4px;
+  font-size: 12px;
+}
+
+.odd strong {
+  display: block;
+  color: var(--green);
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.odd.chosen {
+  background: var(--green);
+  color: #07160d;
+}
+
+.odd.chosen strong {
+  color: #07160d;
+}
+
+.notice {
+  background: #292e2b;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-radius: 8px;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #171c19;
+  border-top: 1px solid #303833;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+  z-index: 20;
+}
+
+.nav-item {
+  color: #aab4ae;
+  background: transparent;
+  font-size: 10px;
+  padding: 4px 0;
+}
+
+.nav-item span {
+  display: block;
+  font-size: 21px;
+  margin-bottom: 4px;
+}
+
+.nav-item.active {
+  color: var(--green);
+}
+
+.form-input {
+  width: 100%;
+  padding: 13px;
+  background: var(--panel2);
+  color: white;
+  border: 1px solid #3b443e;
+  border-radius: 7px;
+  margin: 10px 0;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.action-row button {
+  flex: 1;
+}
+
+@media (min-width: 700px) {
+  .page, header {
+    padding-left: max(20px, calc((100% - 900px) / 2));
+    padding-right: max(20px, calc((100% - 900px) / 2));
+  }
+
+  .matches-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .bottom-nav {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 900px;
+  }
 }
 </style>
 </head>
 
 <body>
-<header class="topbar">
-  <div class="logo">Zetu<span>Bet</span> <small style="font-size:10px;color:#aaa">AVIATOR</small></div>
-  <div class="balance">DEMO KSh <span id="balance">10,000.00</span></div>
+
+<header>
+  <div class="logo">ZetuBet</div>
+  <div class="balance">
+    Demo balance: <strong id="balance">KSh 10,000</strong>
+  </div>
 </header>
 
-<main class="page">
-  <div class="history" id="history">
-    <span class="pill low">1.11x</span>
-    <span class="pill mid">3.01x</span>
-    <span class="pill high">6.55x</span>
-    <span class="pill low">1.03x</span>
-    <span class="pill mid">1.91x</span>
-    <span class="pill high">6.19x</span>
-    <span class="pill low">1.31x</span>
-  </div>
+<!-- HOME -->
+<main id="home" class="page active">
 
-  <section class="game">
-    <div class="status" id="status">DEMO ROUND · WAITING FOR TAKEOFF</div>
-    <div class="multiplier" id="multiplier">1.00x</div>
-    <div class="message" id="message">Place your demo bet</div>
-    <svg class="flight" viewBox="0 0 900 300" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ff334b" stop-opacity=".1"/>
-          <stop offset="100%" stop-color="#ff334b" stop-opacity=".95"/>
-        </linearGradient>
-      </defs>
-      <path id="trailPath" d="" fill="none" stroke="url(#trail)" stroke-width="4" stroke-linecap="round"/>
-    </svg>
-    <div class="plane" id="plane">✈</div>
+  <section class="welcome">
+    <h1>Welcome to ZetuBet</h1>
+    <p>Explore sports, check match odds and discover your favourite games.</p>
   </section>
 
-  <section class="bets">
-    <div class="panel">
-      <div class="panel-title">BET 1</div>
-      <div class="stake-row">
-        <input class="stake" id="stake1" type="number" min="10" step="10" value="100" aria-label="Bet 1 amount in Kenyan shillings">
-      </div>
-      <div class="chips">
-        <button class="chip" data-target="stake1" data-value="100">100</button>
-        <button class="chip" data-target="stake1" data-value="250">250</button>
-        <button class="chip" data-target="stake1" data-value="1000">1,000</button>
-        <button class="chip" data-target="stake1" data-value="25000">25,000</button>
-      </div>
-      <button class="bet-button" id="bet1">BET KSh 100</button>
+  <h2 class="section-title">Explore</h2>
+
+  <div class="quick-games">
+    <div class="game-icon" onclick="openPage('sports')">
+      <span>⚽</span><small>Sports</small>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">BET 2</div>
-      <div class="stake-row">
-        <input class="stake" id="stake2" type="number" min="10" step="10" value="100" aria-label="Bet 2 amount in Kenyan shillings">
-      </div>
-      <div class="chips">
-        <button class="chip" data-target="stake2" data-value="100">100</button>
-        <button class="chip" data-target="stake2" data-value="250">250</button>
-        <button class="chip" data-target="stake2" data-value="1000">1,000</button>
-        <button class="chip" data-target="stake2" data-value="25000">25,000</button>
-      </div>
-      <button class="bet-button" id="bet2">BET KSh 100</button>
+    <div class="game-icon" onclick="openPage('aviator')">
+      <span>✈️</span><small>Aviator</small>
     </div>
-  </section>
 
-  <div class="tabs">
-    <button class="tab active" id="allTab">ALL BETS</button>
-    <button class="tab" id="myTab">MY BETS</button>
+    <div class="game-icon" onclick="openPage('casino')">
+      <span>🎰</span><small>Casino</small>
+    </div>
+
+    <div class="game-icon" onclick="openPage('wallet')">
+      <span>💰</span><small>Wallet</small>
+    </div>
   </div>
 
-  <div class="list-heading">
-    <span>PLAYER</span><span>BET KSh</span><span>WIN KSh</span>
-  </div>
-  <div id="betList">
-    <div class="bet-row"><span>DEMO PLAYER</span><span>100.00</span><span>—</span></div>
+  <h2 class="section-title">Popular sports</h2>
+
+  <div class="sport-tabs">
+    <button class="selected" onclick="filterSport('all',this)">Popular</button>
+    <button onclick="filterSport('Football',this)">Football</button>
+    <button onclick="filterSport('Basketball',this)">Basketball</button>
   </div>
 
-  <p class="notice">Demo game only. Balances and results are simulated and are not real money or live player activity.</p>
+  <div id="home-matches" class="matches-grid"></div>
+
+  <div class="notice">
+    Demonstration interface. The displayed matches and odds are sample data,
+    not live betting markets.
+  </div>
 </main>
 
-<script>
-const $ = id => document.getElementById(id);
-let balance = 10000;
-let round = "waiting";
-let multiplier = 1;
-let crashAt = 1.5 + Math.random() * 5;
-let roundBets = [null, null];
-let history = [1.11,3.01,6.55,1.03,1.91,6.19,1.31];
-let betHistory = [];
-let showingMine = false;
-let lastTime = 0;
-let roundNumber = 0;
+<!-- SPORTS -->
+<section id="sports" class="page">
+  <h2 class="section-title">⚽ Sports</h2>
+  <p style="color:#aab4ae;font-size:13px;margin-bottom:15px">
+    Browse matches and sample odds.
+  </p>
 
-function money(n) {
-  return Number(n).toLocaleString("en-KE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+  <div class="sport-tabs">
+    <button class="selected" onclick="filterSport('all',this)">All</button>
+    <button onclick="filterSport('Football',this)">Football</button>
+    <button onclick="filterSport('Basketball',this)">Basketball</button>
+  </div>
+
+  <div id="sports-matches" style="margin-top:15px"></div>
+
+  <h3 class="section-title">Bet slip</h3>
+  <div id="betslip" class="match">
+    <p style="color:#aab4ae;font-size:13px">Select an odds button to add a selection.</p>
+  </div>
+</section>
+
+<!-- AVIATOR -->
+<section id="aviator" class="page">
+  <h2 class="section-title">✈️ Aviator</h2>
+  <div class="match">
+    <p style="margin-bottom:10px">Open your Aviator game below.</p>
+    <button class="primary" onclick="window.location.href='/aviator.html'">
+      Open Aviator
+    </button>
+  </div>
+</section>
+
+<!-- CASINO -->
+<section id="casino" class="page">
+  <h2 class="section-title">🎰 Casino</h2>
+  <div class="match">
+    <h3>Casino games</h3>
+    <p style="color:#aab4ae;margin-top:10px;font-size:13px">
+      The casino section is ready for its game cards to be added.
+    </p>
+  </div>
+</section>
+
+<!-- WALLET -->
+<section id="wallet" class="page">
+  <h2 class="section-title">💰 Wallet</h2>
+  <div class="match">
+    <p style="color:#aab4ae">Demo wallet balance</p>
+    <h2 style="color:#20d878;margin:12px 0" id="wallet-balance">KSh 10,000</h2>
+    <div class="notice">
+      Deposits and withdrawals are not connected yet. No real money is processed.
+    </div>
+  </div>
+</section>
+
+<!-- HISTORY -->
+<section id="history" class="page">
+  <h2 class="section-title">📜 Betting history</h2>
+  <div class="match">
+    <p style="color:#aab4ae;font-size:13px">
+      Your demo betting history will appear here when the history feature is added.
+    </p>
+  </div>
+</section>
+
+<!-- ACCOUNT -->
+<section id="account" class="page">
+  <h2 class="section-title">👤 Account</h2>
+  <div class="match">
+    <h3>ZetuBet account</h3>
+    <p style="color:#aab4ae;margin-top:10px;font-size:13px">
+      Account registration, login and settings will be connected in a later step.
+    </p>
+  </div>
+</section>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="home" onclick="openPage('home')">
+    <span>🏠</span>Home
+  </button>
+  <button class="nav-item" data-page="sports" onclick="openPage('sports')">
+    <span>⚽</span>Sports
+  </button>
+  <button class="nav-item" data-page="aviator" onclick="openPage('aviator')">
+    <span>✈️</span>Aviator
+  </button>
+  <button class="nav-item" data-page="wallet" onclick="openPage('wallet')">
+    <span>💰</span>Wallet
+  </button>
+  <button class="nav-item" data-page="account" onclick="openPage('account')">
+    <span>👤</span>Account
+  </button>
+</nav>
+
+<script>
+const matches = [
+  {
+    id: 1,
+    sport: "Football",
+    league: "SAMPLE FOOTBALL MATCH",
+    home: "Home Team",
+    away: "Away Team",
+    odds: ["2.10", "3.20", "2.80"]
+  },
+  {
+    id: 2,
+    sport: "Football",
+    league: "SAMPLE FOOTBALL MATCH",
+    home: "United FC",
+    away: "City FC",
+    odds: ["1.85", "3.40", "3.60"]
+  },
+  {
+    id: 3,
+    sport: "Basketball",
+    league: "SAMPLE BASKETBALL MATCH",
+    home: "Lions",
+    away: "Tigers",
+    odds: ["1.75", "—", "2.05"]
+  }
+];
+
+let selectedBets = [];
+let currentFilter = "all";
+
+function openPage(page) {
+  document.querySelectorAll(".page").forEach(section => {
+    section.classList.toggle("active", section.id === page);
   });
-}
-function updateBalance() { $("balance").textContent = money(balance); }
-function addHistory(x) {
-  history.unshift(x);
-  history = history.slice(0, 12);
-  $("history").innerHTML = history.map(n => {
-    let cls = n < 2 ? "low" : n < 5 ? "mid" : "high";
-    return `<span class="pill ${cls}">${n.toFixed(2)}x</span>`;
-  }).join("");
-}
-function drawFlight() {
-  const progress = Math.min(Math.log(multiplier) / Math.log(Math.max(crashAt, 1.1)), 1);
-  const x = 75 + progress * 700;
-  const y = 265 - progress * 220;
-  const path = `M 65 275 Q ${x*.45} 275 ${x} ${y}`;
-  $("trailPath").setAttribute("d", path);
-  $("plane").style.left = Math.min(83, 7 + progress * 77) + "%";
-  $("plane").style.bottom = Math.min(78, 7 + progress * 70) + "%";
-  $("plane").style.transform = `rotate(-${12 + progress*15}deg)`;
-}
-function renderBets() {
-  const rows = betHistory.filter(b => !showingMine || b.mine);
-  $("betList").innerHTML = rows.length ? rows.slice().reverse().map(b => `
-    <div class="bet-row">
-      <span>${b.mine ? "YOU" : "DEMO PLAYER"}</span>
-      <span>${money(b.stake)}</span>
-      <span class="${b.win > 0 ? "win" : b.win === 0 ? "" : "loss"}">${b.win === null ? "—" : money(b.win)}</span>
-    </div>`).join("") : '<div class="notice">No demo bets yet.</div>';
-}
-function setBetButton(i, text, disabled=false, cls="") {
-  const btn = $("bet"+i);
-  btn.textContent = text;
-  btn.disabled = disabled;
-  btn.className = "bet-button " + cls;
-}
-function placeBet(i) {
-  if (round === "flying") {
-    cashOut(i);
-    return;
-  }
-  if (round !== "waiting") {
-    $("message").textContent = "Wait for the next round.";
-    return;
-  }
-  if (roundBets[i-1]) {
-    $("message").textContent = "This bet is already placed.";
-    return;
-  }
-  const stake = Number($("stake"+i).value);
-  if (!Number.isFinite(stake) || stake < 10) {
-    $("message").textContent = "Minimum demo stake is KSh 10.";
-    return;
-  }
-  if (stake > balance) {
-    $("message").textContent = "Insufficient demo balance.";
-    return;
-  }
-  balance -= stake;
-  updateBalance();
-  const bet = {mine:true, stake, win:null, cashed:false, index:i};
-  roundBets[i-1] = bet;
-  betHistory.push(bet);
-  setBetButton(i, "BET PLACED ✓", true);
-  $("message").textContent = "Your demo bet is placed.";
-  renderBets();
-}
-function cashOut(i) {
-  const bet = roundBets[i-1];
-  if (round !== "flying" || !bet || bet.cashed) return;
-  bet.cashed = true;
-  bet.win = Math.floor(bet.stake * multiplier * 100) / 100;
-  balance += bet.win;
-  updateBalance();
-  setBetButton(i, "CASHED OUT · KSh " + money(bet.win), true);
-  $("message").textContent = "Demo cash-out at " + multiplier.toFixed(2) + "x";
-  renderBets();
-}
-function startRound() {
-  roundNumber++;
-  round = "flying";
-  multiplier = 1;
-  crashAt = 1.15 + Math.random() * 8;
-  lastTime = performance.now();
-  $("status").textContent = "DEMO ROUND #" + roundNumber + " · IN FLIGHT";
-  $("message").textContent = "Cash out before the crash!";
-  $("multiplier").textContent = "1.00x";
-  $("multiplier").style.color = "#fff";
-  drawFlight();
-  [1,2].forEach(i => {
-    const b = roundBets[i-1];
-    if (b && !b.cashed) setBetButton(i, "CASH OUT", false, "cashout");
+
+  document.querySelectorAll(".nav-item").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === page);
   });
-  requestAnimationFrame(tick);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
-function tick(now) {
-  if (round !== "flying") return;
-  const elapsed = (now - lastTime) / 1000;
-  multiplier = Math.exp(elapsed * 0.22);
-  if (multiplier >= crashAt) {
-    multiplier = crashAt;
-    $("multiplier").textContent = multiplier.toFixed(2) + "x";
-    $("multiplier").style.color = "#ff5265";
-    $("status").textContent = "CRASHED AT " + multiplier.toFixed(2) + "x";
-    $("message").textContent = "Round over. Start again in a moment.";
-    round = "crashed";
-    addHistory(multiplier);
-    roundBets.forEach((b,i) => {
-      if (b && !b.cashed) {
-        b.win = 0;
-        setBetButton(i+1, "LOST · NEXT ROUND", true);
-      }
+
+function filterSport(sport, button) {
+  currentFilter = sport;
+
+  document.querySelectorAll(".sport-tabs button").forEach(item => {
+    item.classList.remove("selected");
+  });
+
+  button.classList.add("selected");
+  renderMatches();
+}
+
+function renderMatches() {
+  const filtered = currentFilter === "all"
+    ? matches
+    : matches.filter(match => match.sport === currentFilter);
+
+  const html = filtered.map(match => `
+    <article class="match">
+      <div class="league">${match.league}</div>
+      <div class="teams">
+        <span>${match.home}</span>
+        <span>vs</span>
+        <span>${match.away}</span>
+      </div>
+      <div class="odds">
+        ${["Home", "Draw", "Away"].map((label, index) => {
+          const odd = match.odds[index];
+          if (odd === "—") {
+            return `<button class="odd" disabled>${label}<strong>—</strong></button>`;
+          }
+
+          const chosen = selectedBets.some(
+            bet => bet.id === match.id && bet.outcome === label
+          );
+
+          return `
+            <button class="odd ${chosen ? "chosen" : ""}"
+              onclick="selectBet(${match.id},'${label}')">
+              ${label}<strong>${odd}</strong>
+            </button>`;
+        }).join("")}
+      </div>
+    </article>
+  `).join("");
+
+  document.getElementById("home-matches").innerHTML = html;
+  document.getElementById("sports-matches").innerHTML = html;
+
+  renderBetslip();
+}
+
+function selectBet(id, outcome) {
+  const match = matches.find(item => item.id === id);
+  const existing = selectedBets.findIndex(bet => bet.id === id);
+
+  if (existing >= 0 && selectedBets[existing].outcome === outcome) {
+    selectedBets.splice(existing, 1);
+  } else {
+    if (existing >= 0) selectedBets.splice(existing, 1);
+
+    selectedBets.push({
+      id,
+      home: match.home,
+      away: match.away,
+      outcome,
+      odd: match.odds[["Home", "Draw", "Away"].indexOf(outcome)]
     });
-    renderBets();
-    setTimeout(nextRound, 3000);
+  }
+
+  renderMatches();
+}
+
+function renderBetslip() {
+  const slip = document.getElementById("betslip");
+
+  if (!selectedBets.length) {
+    slip.innerHTML = `
+      <p style="color:#aab4ae;font-size:13px">
+        Select an odds button to add a selection.
+      </p>`;
     return;
   }
-  $("multiplier").textContent = multiplier.toFixed(2) + "x";
-  drawFlight();
-  requestAnimationFrame(tick);
+
+  slip.innerHTML = selectedBets.map(bet => `
+    <p style="font-size:13px;margin-bottom:10px">
+      ${bet.home} vs ${bet.away}<br>
+      <span style="color:#20d878">${bet.outcome} · ${bet.odd}</span>
+    </p>
+  `).join("") + `
+    <div class="notice">
+      Demo bet slip only. Placing real-money bets is not enabled.
+    </div>`;
 }
-function nextRound() {
-  round = "waiting";
-  roundBets = [null, null];
-  $("status").textContent = "DEMO ROUND · PLACE YOUR BET";
-  $("message").textContent = "Place your demo bet before takeoff.";
-  $("multiplier").textContent = "1.00x";
-  $("multiplier").style.color = "#fff";
-  $("trailPath").setAttribute("d", "");
-  $("plane").style.left = "8%";
-  $("plane").style.bottom = "25px";
-  [1,2].forEach(i => setBetButton(i, "BET KSh " + money(Number($("stake"+i).value) || 0)));
-}
-[1,2].forEach(i => {
-  $("bet"+i).addEventListener("click", () => placeBet(i));
-  $("stake"+i).addEventListener("input", () => {
-    if (round === "waiting" && !roundBets[i-1]) {
-      setBetButton(i, "BET KSh " + money(Number($("stake"+i).value) || 0));
-    }
-  });
-});
-document.querySelectorAll(".chip").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const input = $(btn.dataset.target);
-    input.value = btn.dataset.value;
-    input.dispatchEvent(new Event("input"));
-  });
-});
-$("allTab").addEventListener("click", () => {
-  showingMine = false;
-  $("allTab").classList.add("active");
-  $("myTab").classList.remove("active");
-  renderBets();
-});
-$("myTab").addEventListener("click", () => {
-  showingMine = true;
-  $("myTab").classList.add("active");
-  $("allTab").classList.remove("active");
-  renderBets();
-});
-updateBalance();
-setTimeout(startRound, 5000);
+
+renderMatches();
 </script>
+
 </body>
 </html>
