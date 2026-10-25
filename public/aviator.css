@@ -1,0 +1,509 @@
+/* SECTION 1: BASE STYLES */
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --aviator-red: #ff3545;
+  --aviator-green: #18c879;
+  --aviator-bg: #101419;
+  --aviator-panel: #1b222a;
+  --aviator-muted: #929eaa;
+}
+
+html {
+  min-height: 100%;
+  background: var(--aviator-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--aviator-bg);
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* SECTION 2: MAIN LAYOUT */
+.aviator-app {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* SECTION 3: HEADER */
+.aviator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px 16px;
+}
+
+.aviator-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: .5px;
+}
+
+.brand-plane {
+  color: var(--aviator-red);
+  font-size: 28px;
+}
+
+.demo-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  padding: 9px 12px;
+  background: #202831;
+  border: 1px solid #303b47;
+  border-radius: 9px;
+}
+
+.demo-balance small {
+  color: var(--aviator-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.demo-balance strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+/* SECTION 4: HISTORY */
+.history-section {
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #191f26;
+  border: 1px solid #2a333d;
+  border-radius: 12px;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #aab5c0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .6px;
+}
+
+.live-indicator {
+  color: var(--aviator-green);
+  white-space: nowrap;
+}
+
+.history-results {
+  display: flex;
+  gap: 7px;
+  min-height: 27px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.history-result {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #303842;
+  color: #d6dce2;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.history-result.low {
+  color: #ff6471;
+  background: #43252b;
+}
+
+.history-result.medium {
+  color: #35d995;
+  background: #183b30;
+}
+
+.history-result.high {
+  color: #44c5ff;
+  background: #183544;
+}
+
+.history-empty {
+  color: var(--aviator-muted);
+  font-size: 12px;
+}
+
+/* SECTION 5: FLIGHT BOARD */
+.flight-board {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  background: #151b22;
+  border: 1px solid #303a46;
+  border-radius: 14px;
+  isolation: isolate;
+}
+
+.flight-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.flight-board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at bottom left,
+    rgba(255,53,69,.09),
+    transparent 65%
+  );
+}
+
+.flight-status {
+  position: absolute;
+  top: 19px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  color: #aab4bf;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.multiplier {
+  position: absolute;
+  top: 42%;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: clamp(38px, 10vw, 66px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: #ffffff;
+  text-shadow: 0 4px 24px rgba(0,0,0,.4);
+  pointer-events: none;
+}
+
+.flight-chart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.flight-footer {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  color: #8e9aa7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.flight-footer strong {
+  color: #ffffff;
+}
+
+.crash-message {
+  display: none;
+  position: absolute;
+  top: 46%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  transform: translateY(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.crash-message.show {
+  display: flex;
+}
+
+.crash-message strong {
+  color: var(--aviator-red);
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.crash-message span {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* SECTION 6: BET PANELS */
+.bet-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.bet-panel {
+  min-width: 0;
+  padding: 12px;
+  background: var(--aviator-panel);
+  border: 1px solid #303a45;
+  border-radius: 12px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .6px;
+}
+
+.panel-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--aviator-green);
+  border-radius: 50%;
+}
+
+.second-dot {
+  background: #ffbd3c;
+}
+
+/* SECTION 7: STAKE CONTROLS */
+.stake-controls {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) 35px;
+  gap: 5px;
+}
+
+.stake-controls button {
+  min-height: 39px;
+  border: 1px solid #3a4653;
+  border-radius: 7px;
+  background: #29323c;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.stake-controls input {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 0 3px;
+  border: 1px solid #3a4653;
+  border-radius: 7px;
+  outline: none;
+  background: #11171d;
+  color: #ffffff;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.stake-controls input::-webkit-inner-spin-button,
+.stake-controls input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.stake-controls input:focus {
+  border-color: var(--aviator-green);
+}
+
+.quick-stakes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.quick-stakes button {
+  padding: 7px 2px;
+  border: 1px solid #36414c;
+  border-radius: 6px;
+  background: #252e38;
+  color: #b8c2cc;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.quick-stakes button:active,
+.stake-controls button:active {
+  background: #3a4653;
+}
+
+/* SECTION 8: RETURN AND BET BUTTONS */
+.potential-win {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 12px 0;
+  color: #9ca8b3;
+  font-size: 10px;
+}
+
+.potential-win strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.bet-button,
+.cashout-button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.bet-button {
+  background: var(--aviator-green);
+}
+
+.bet-button span,
+.cashout-button span {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.bet-button:active {
+  background: #11a968;
+}
+
+.cashout-button {
+  background: var(--aviator-red);
+}
+
+.cashout-button:active {
+  background: #df2333;
+}
+
+.panel-message {
+  min-height: 15px;
+  margin-top: 9px;
+  color: #9da9b5;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* SECTION 9: NOTICE */
+.aviator-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 14px 4px 8px;
+  color: #8e9aa6;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.aviator-notice span {
+  color: #ffbd3c;
+  font-weight: 900;
+}
+
+/* SECTION 10: SMALL PHONES */
+@media (max-width: 380px) {
+  .aviator-app {
+    padding: 8px;
+  }
+
+  .aviator-brand {
+    font-size: 18px;
+  }
+
+  .demo-balance {
+    padding: 8px;
+  }
+
+  .demo-balance strong {
+    font-size: 11px;
+  }
+
+  .flight-board {
+    height: 290px;
+  }
+
+  .bet-panels {
+    gap: 7px;
+  }
+
+  .bet-panel {
+    padding: 9px;
+  }
+
+  .stake-controls {
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    gap: 3px;
+  }
+
+  .stake-controls input {
+    font-size: 12px;
+  }
+
+  .quick-stakes button {
+    font-size: 9px;
+  }
+}
