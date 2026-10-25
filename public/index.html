@@ -1,114 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101522">
-  <title>ZetuBet — Play the moment</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZetuBet Aviator</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101216;color:#fff;font-family:Arial,sans-serif}
+button,input{font:inherit}
+button{cursor:pointer;border:0}
+.topbar{height:58px;background:#191c22;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.logo{font-size:23px;font-weight:900;color:#ff334b}
+.logo span{color:#fff}
+.balance{background:#292d35;padding:10px 13px;border-radius:7px;font-weight:bold;color:#70e49a}
+.page{max-width:900px;margin:auto;padding:12px}
+.history{display:flex;gap:7px;overflow-x:auto;padding:7px 0 14px}
+.pill{background:#303441;color:#c6a0ff;padding:7px 10px;border-radius:5px;font-size:12px;white-space:nowrap;font-weight:bold}
+.pill.low{color:#69c8ff}
+.pill.mid{color:#bda0ff}
+.pill.high{color:#ff80ce}
+.game{height:300px;background:radial-gradient(ellipse at 25% 100%,#38202b 0%,#1b1b25 40%,#121419 80%);border:1px solid #30323b;border-radius:10px;position:relative;overflow:hidden}
+.game:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:35px 35px}
+.status{position:absolute;top:15px;left:0;right:0;text-align:center;font-size:12px;color:#a8aab5;z-index:2}
+.multiplier{position:absolute;top:75px;left:0;right:0;text-align:center;font-size:clamp(42px,10vw,68px);font-weight:900;z-index:2}
+.message{position:absolute;top:151px;left:0;right:0;text-align:center;color:#c7c8d0;font-size:13px;z-index:2}
+.flight{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.plane{position:absolute;left:8%;bottom:25px;font-size:34px;z-index:3;filter:drop-shadow(0 0 7px #ff334b);transform:rotate(-12deg)}
+.bets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.panel{background:#1b1e25;border-radius:10px;padding:12px;border:1px solid #30333c;min-width:0}
+.panel-title{font-size:14px;font-weight:bold;margin-bottom:12px}
+.stake-row{display:flex;gap:7px;align-items:center}
+.stake{width:100%;min-width:0;background:#111319;border:1px solid #414550;color:white;border-radius:6px;padding:11px 7px;text-align:center}
+.bet-button{width:100%;margin-top:10px;background:#22c875;color:#092517;border-radius:7px;padding:13px 4px;font-weight:900;font-size:14px}
+.bet-button.cashout{background:#ffca45;color:#302000}
+.bet-button:disabled{opacity:.55;cursor:not-allowed}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.chip{flex:1;min-width:38px;background:#30343e;color:#e1e2e7;padding:7px 3px;border-radius:5px;font-size:11px}
+.chip:active{background:#555b68}
+.tabs{display:flex;gap:20px;border-bottom:1px solid #343741;margin-top:18px}
+.tab{padding:13px 4px;background:none;color:#9ea1ad;font-weight:bold}
+.tab.active{color:#fff;border-bottom:2px solid #ff344c}
+.list-heading,.bet-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:12px 7px;font-size:12px}
+.list-heading{color:#9296a4}
+.bet-row{background:#1a1d24;border-radius:6px;margin-top:5px;color:#e8e8ed}
+.bet-row span:nth-child(2),.bet-row span:nth-child(3){text-align:right}
+.win{color:#5be59b}
+.loss{color:#ff6276}
+.notice{font-size:11px;color:#858996;text-align:center;margin:15px 0}
+@media(max-width:420px){
+ .page{padding:9px}
+ .game{height:265px}
+ .bets{gap:7px}
+ .panel{padding:9px}
+ .panel-title{font-size:12px}
+ .bet-button{font-size:12px}
+ .stake{font-size:13px}
+ .chip{font-size:10px}
+}
+</style>
 </head>
+
 <body>
-  <header class="topbar">
-    <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
-    <a class="brand" href="#" aria-label="ZetuBet home"><span class="brand-mark">Z</span><span>Zetu<span class="brand-accent">Bet</span></span></a>
-    <div class="top-actions">
-      <span class="demo-pill">DEMO</span>
-      <button class="btn btn-outline" id="loginBtn">Log in</button>
-      <button class="btn btn-primary" id="signupBtn">Join</button>
-    </div>
-  </header>
+<header class="topbar">
+  <div class="logo">Zetu<span>Bet</span> <small style="font-size:10px;color:#aaa">AVIATOR</small></div>
+  <div class="balance">DEMO KSh <span id="balance">10,000.00</span></div>
+</header>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="side-balance"><small>DEMO BALANCE</small><strong id="balanceSide">$1,000.00</strong><button class="btn btn-primary btn-full" id="addDemoBtn">＋ Add demo funds</button></div>
-    <nav>
-      <button class="nav-item active" data-page="sports">⚽ <span>Sports</span></button>
-      <button class="nav-item" data-page="casino">🎰 <span>Casino</span></button>
-      <button class="nav-item" data-page="aviator">🚀 <span>Crash game</span><span class="live-dot"></span></button>
-      <button class="nav-item" data-page="history">📋 <span>My activity</span></button>
-      <button class="nav-item" data-page="account">👤 <span>Account</span></button>
-    </nav>
-    <div class="sidebar-note">Demo mode only. No real money is accepted or paid out.</div>
-  </aside>
-  <div class="scrim" id="scrim"></div>
-
-  <main class="main">
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">WELCOME TO ZETUBET</span>
-        <h1>Feel the <span>moment.</span></h1>
-        <p>Sports, casino-style games and multiplier action — all in one place.</p>
-        <button class="btn btn-primary" data-go="sports">Explore games <span>→</span></button>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="orb orb-one"></div><div class="orb orb-two"></div>
-        <div class="hero-card"><span>DEMO PLAY</span><strong>1.98×</strong><small>EXAMPLE MULTIPLIER</small></div>
-        <div class="hero-spark">✦</div>
-      </div>
-    </section>
-
-    <div class="summary-row">
-      <div class="summary-card"><span class="summary-icon">💳</span><div><small>Demo wallet</small><strong id="balanceMain">$1,000.00</strong></div></div>
-      <div class="summary-card"><span class="summary-icon">🎯</span><div><small>Demo plays</small><strong id="playCount">0</strong></div></div>
-      <div class="summary-card"><span class="summary-icon">🏆</span><div><small>Demo net result</small><strong id="netResult">$0.00</strong></div></div>
-    </div>
-
-    <section class="page-section" id="sportsPage">
-      <div class="section-heading"><div><span class="eyebrow">THE ACTION</span><h2>Sports <span>markets</span></h2></div><span class="section-tag">SAMPLE ODDS</span></div>
-      <div class="sport-tabs"><button class="sport-tab selected">⚽ Football</button><button class="sport-tab" disabled>🏀 Basketball · Soon</button><button class="sport-tab" disabled>🎾 Tennis · Soon</button></div>
-      <div id="matches" class="matches-grid"><div class="loading">Loading sample matches…</div></div>
-      <p class="fine-print">Sample fixtures and odds are for interface testing only. They are not live data.</p>
-    </section>
-
-    <section class="page-section hidden" id="casinoPage">
-      <div class="section-heading"><div><span class="eyebrow">TAKE A SPIN</span><h2>Casino <span>lounge</span></h2></div><span class="section-tag">DEMO GAMES</span></div>
-      <div class="game-grid">
-        <article class="game-card game-roulette"><div class="game-art">🎡</div><div class="game-card-body"><span class="game-label">TABLE GAME</span><h3>Lucky Wheel</h3><p>Try a virtual spin with demo credits.</p><button class="btn btn-primary btn-full" data-casino="wheel">Play demo</button></div></article>
-        <article class="game-card game-slots"><div class="game-art">🎰</div><div class="game-card-body"><span class="game-label">ARCADE</span><h3>Triple Spark</h3><p>Spin three reels for a demo result.</p><button class="btn btn-primary btn-full" data-casino="slots">Play demo</button></div></article>
-        <article class="game-card game-cards"><div class="game-art">🃏</div><div class="game-card-body"><span class="game-label">QUICK PLAY</span><h3>High Card</h3><p>Draw a card and test your luck.</p><button class="btn btn-primary btn-full" data-casino="cards">Play demo</button></div></article>
-      </div>
-    </section>
-
-    <section class="page-section hidden" id="aviatorPage">
-      <div class="section-heading"><div><span class="eyebrow">MULTIPLIER MODE</span><h2>Crash <span>flight</span></h2></div><span class="section-tag">SIMULATED ROUND</span></div>
-      <div class="crash-board">
-        <div class="crash-top"><span><i class="live-dot"></i> DEMO ROUND</span><span>Balance <strong id="crashBalance">$1,000.00</strong></span></div>
-        <div class="crash-stage" id="crashStage"><div class="stars"></div><div class="crash-multiplier" id="multiplier">1.00×</div><div class="flight-path"></div><div class="plane">✈</div><div class="crash-status" id="crashStatus">Place a demo stake to start</div></div>
-        <div class="crash-controls">
-          <label>Demo stake ($)<input id="crashStake" type="number" min="1" max="500" step="1" value="10"></label>
-          <label>Auto cash-out (×)<input id="autoCashout" type="number" min="1.1" max="100" step="0.1" placeholder="Optional"></label>
-          <button class="btn btn-primary" id="startCrash">Start demo round</button>
-          <button class="btn btn-success" id="cashout" disabled>Cash out</button>
-        </div>
-        <p class="fine-print">The multiplier and outcome are randomly simulated for demo play. This is not a real-money game.</p>
-      </div>
-    </section>
-
-    <section class="page-section hidden" id="historyPage">
-      <div class="section-heading"><div><span class="eyebrow">YOUR SESSION</span><h2>Activity <span>history</span></h2></div></div>
-      <div class="history-panel"><div class="history-head"><span>Activity</span><span>Result</span><span>Time</span></div><div id="historyRows"><p class="empty-state">Your demo activity will appear here.</p></div></div>
-    </section>
-
-    <section class="page-section hidden" id="accountPage">
-      <div class="section-heading"><div><span class="eyebrow">PROFILE</span><h2>Your <span>account</span></h2></div></div>
-      <div class="account-panel"><div class="avatar">Z</div><div><h3>Guest player</h3><p>This starter version stores demo activity in this browser only.</p><span class="section-tag">DEMO ACCOUNT</span></div></div>
-      <div class="notice"><strong>Before launch</strong><p>Real-money betting, deposits and withdrawals are not enabled. Before adding them, obtain the applicable Kenyan gambling licence, confirm age and identity checks, and secure written approval from a payment provider for the betting use case.</p></div>
-    </section>
-
-    <footer><span>© 2026 ZetuBet</span><span>Demo platform · Play responsibly</span></footer>
-  </main>
-
-  <div class="toast" id="toast" role="status"></div>
-  <div class="modal-backdrop hidden" id="modalBackdrop">
-    <div class="modal">
-      <button class="modal-close" id="modalClose" aria-label="Close">×</button>
-      <span class="eyebrow">ZETUBET ACCOUNT</span><h2 id="modalTitle">Welcome back</h2>
-      <p id="modalDescription">Account creation and secure authentication will be added in the next build step.</p>
-      <label>Email address<input type="email" placeholder="you@example.com" disabled></label>
-      <label>Password<input type="password" placeholder="At least 8 characters" disabled></label>
-      <button class="btn btn-primary btn-full" id="modalOk">Got it</button>
-      <p class="fine-print">This starter build does not collect or store login credentials.</p>
-    </div>
+<main class="page">
+  <div class="history" id="history">
+    <span class="pill low">1.11x</span>
+    <span class="pill mid">3.01x</span>
+    <span class="pill high">6.55x</span>
+    <span class="pill low">1.03x</span>
+    <span class="pill mid">1.91x</span>
+    <span class="pill high">6.19x</span>
+    <span class="pill low">1.31x</span>
   </div>
-  <script src="/app.js"></script>
+
+  <section class="game">
+    <div class="status" id="status">DEMO ROUND · WAITING FOR TAKEOFF</div>
+    <div class="multiplier" id="multiplier">1.00x</div>
+    <div class="message" id="message">Place your demo bet</div>
+    <svg class="flight" viewBox="0 0 900 300" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ff334b" stop-opacity=".1"/>
+          <stop offset="100%" stop-color="#ff334b" stop-opacity=".95"/>
+        </linearGradient>
+      </defs>
+      <path id="trailPath" d="" fill="none" stroke="url(#trail)" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="plane" id="plane">✈</div>
+  </section>
+
+  <section class="bets">
+    <div class="panel">
+      <div class="panel-title">BET 1</div>
+      <div class="stake-row">
+        <input class="stake" id="stake1" type="number" min="10" step="10" value="100" aria-label="Bet 1 amount in Kenyan shillings">
+      </div>
+      <div class="chips">
+        <button class="chip" data-target="stake1" data-value="100">100</button>
+        <button class="chip" data-target="stake1" data-value="250">250</button>
+        <button class="chip" data-target="stake1" data-value="1000">1,000</button>
+        <button class="chip" data-target="stake1" data-value="25000">25,000</button>
+      </div>
+      <button class="bet-button" id="bet1">BET KSh 100</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">BET 2</div>
+      <div class="stake-row">
+        <input class="stake" id="stake2" type="number" min="10" step="10" value="100" aria-label="Bet 2 amount in Kenyan shillings">
+      </div>
+      <div class="chips">
+        <button class="chip" data-target="stake2" data-value="100">100</button>
+        <button class="chip" data-target="stake2" data-value="250">250</button>
+        <button class="chip" data-target="stake2" data-value="1000">1,000</button>
+        <button class="chip" data-target="stake2" data-value="25000">25,000</button>
+      </div>
+      <button class="bet-button" id="bet2">BET KSh 100</button>
+    </div>
+  </section>
+
+  <div class="tabs">
+    <button class="tab active" id="allTab">ALL BETS</button>
+    <button class="tab" id="myTab">MY BETS</button>
+  </div>
+
+  <div class="list-heading">
+    <span>PLAYER</span><span>BET KSh</span><span>WIN KSh</span>
+  </div>
+  <div id="betList">
+    <div class="bet-row"><span>DEMO PLAYER</span><span>100.00</span><span>—</span></div>
+  </div>
+
+  <p class="notice">Demo game only. Balances and results are simulated and are not real money or live player activity.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let balance = 10000;
+let round = "waiting";
+let multiplier = 1;
+let crashAt = 1.5 + Math.random() * 5;
+let roundBets = [null, null];
+let history = [1.11,3.01,6.55,1.03,1.91,6.19,1.31];
+let betHistory = [];
+let showingMine = false;
+let lastTime = 0;
+let roundNumber = 0;
+
+function money(n) {
+  return Number(n).toLocaleString("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+function updateBalance() { $("balance").textContent = money(balance); }
+function addHistory(x) {
+  history.unshift(x);
+  history = history.slice(0, 12);
+  $("history").innerHTML = history.map(n => {
+    let cls = n < 2 ? "low" : n < 5 ? "mid" : "high";
+    return `<span class="pill ${cls}">${n.toFixed(2)}x</span>`;
+  }).join("");
+}
+function drawFlight() {
+  const progress = Math.min(Math.log(multiplier) / Math.log(Math.max(crashAt, 1.1)), 1);
+  const x = 75 + progress * 700;
+  const y = 265 - progress * 220;
+  const path = `M 65 275 Q ${x*.45} 275 ${x} ${y}`;
+  $("trailPath").setAttribute("d", path);
+  $("plane").style.left = Math.min(83, 7 + progress * 77) + "%";
+  $("plane").style.bottom = Math.min(78, 7 + progress * 70) + "%";
+  $("plane").style.transform = `rotate(-${12 + progress*15}deg)`;
+}
+function renderBets() {
+  const rows = betHistory.filter(b => !showingMine || b.mine);
+  $("betList").innerHTML = rows.length ? rows.slice().reverse().map(b => `
+    <div class="bet-row">
+      <span>${b.mine ? "YOU" : "DEMO PLAYER"}</span>
+      <span>${money(b.stake)}</span>
+      <span class="${b.win > 0 ? "win" : b.win === 0 ? "" : "loss"}">${b.win === null ? "—" : money(b.win)}</span>
+    </div>`).join("") : '<div class="notice">No demo bets yet.</div>';
+}
+function setBetButton(i, text, disabled=false, cls="") {
+  const btn = $("bet"+i);
+  btn.textContent = text;
+  btn.disabled = disabled;
+  btn.className = "bet-button " + cls;
+}
+function placeBet(i) {
+  if (round === "flying") {
+    cashOut(i);
+    return;
+  }
+  if (round !== "waiting") {
+    $("message").textContent = "Wait for the next round.";
+    return;
+  }
+  if (roundBets[i-1]) {
+    $("message").textContent = "This bet is already placed.";
+    return;
+  }
+  const stake = Number($("stake"+i).value);
+  if (!Number.isFinite(stake) || stake < 10) {
+    $("message").textContent = "Minimum demo stake is KSh 10.";
+    return;
+  }
+  if (stake > balance) {
+    $("message").textContent = "Insufficient demo balance.";
+    return;
+  }
+  balance -= stake;
+  updateBalance();
+  const bet = {mine:true, stake, win:null, cashed:false, index:i};
+  roundBets[i-1] = bet;
+  betHistory.push(bet);
+  setBetButton(i, "BET PLACED ✓", true);
+  $("message").textContent = "Your demo bet is placed.";
+  renderBets();
+}
+function cashOut(i) {
+  const bet = roundBets[i-1];
+  if (round !== "flying" || !bet || bet.cashed) return;
+  bet.cashed = true;
+  bet.win = Math.floor(bet.stake * multiplier * 100) / 100;
+  balance += bet.win;
+  updateBalance();
+  setBetButton(i, "CASHED OUT · KSh " + money(bet.win), true);
+  $("message").textContent = "Demo cash-out at " + multiplier.toFixed(2) + "x";
+  renderBets();
+}
+function startRound() {
+  roundNumber++;
+  round = "flying";
+  multiplier = 1;
+  crashAt = 1.15 + Math.random() * 8;
+  lastTime = performance.now();
+  $("status").textContent = "DEMO ROUND #" + roundNumber + " · IN FLIGHT";
+  $("message").textContent = "Cash out before the crash!";
+  $("multiplier").textContent = "1.00x";
+  $("multiplier").style.color = "#fff";
+  drawFlight();
+  [1,2].forEach(i => {
+    const b = roundBets[i-1];
+    if (b && !b.cashed) setBetButton(i, "CASH OUT", false, "cashout");
+  });
+  requestAnimationFrame(tick);
+}
+function tick(now) {
+  if (round !== "flying") return;
+  const elapsed = (now - lastTime) / 1000;
+  multiplier = Math.exp(elapsed * 0.22);
+  if (multiplier >= crashAt) {
+    multiplier = crashAt;
+    $("multiplier").textContent = multiplier.toFixed(2) + "x";
+    $("multiplier").style.color = "#ff5265";
+    $("status").textContent = "CRASHED AT " + multiplier.toFixed(2) + "x";
+    $("message").textContent = "Round over. Start again in a moment.";
+    round = "crashed";
+    addHistory(multiplier);
+    roundBets.forEach((b,i) => {
+      if (b && !b.cashed) {
+        b.win = 0;
+        setBetButton(i+1, "LOST · NEXT ROUND", true);
+      }
+    });
+    renderBets();
+    setTimeout(nextRound, 3000);
+    return;
+  }
+  $("multiplier").textContent = multiplier.toFixed(2) + "x";
+  drawFlight();
+  requestAnimationFrame(tick);
+}
+function nextRound() {
+  round = "waiting";
+  roundBets = [null, null];
+  $("status").textContent = "DEMO ROUND · PLACE YOUR BET";
+  $("message").textContent = "Place your demo bet before takeoff.";
+  $("multiplier").textContent = "1.00x";
+  $("multiplier").style.color = "#fff";
+  $("trailPath").setAttribute("d", "");
+  $("plane").style.left = "8%";
+  $("plane").style.bottom = "25px";
+  [1,2].forEach(i => setBetButton(i, "BET KSh " + money(Number($("stake"+i).value) || 0)));
+}
+[1,2].forEach(i => {
+  $("bet"+i).addEventListener("click", () => placeBet(i));
+  $("stake"+i).addEventListener("input", () => {
+    if (round === "waiting" && !roundBets[i-1]) {
+      setBetButton(i, "BET KSh " + money(Number($("stake"+i).value) || 0));
+    }
+  });
+});
+document.querySelectorAll(".chip").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const input = $(btn.dataset.target);
+    input.value = btn.dataset.value;
+    input.dispatchEvent(new Event("input"));
+  });
+});
+$("allTab").addEventListener("click", () => {
+  showingMine = false;
+  $("allTab").classList.add("active");
+  $("myTab").classList.remove("active");
+  renderBets();
+});
+$("myTab").addEventListener("click", () => {
+  showingMine = true;
+  $("myTab").classList.add("active");
+  $("allTab").classList.remove("active");
+  renderBets();
+});
+updateBalance();
+setTimeout(startRound, 5000);
+</script>
 </body>
 </html>
