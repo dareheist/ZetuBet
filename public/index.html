@@ -13,10 +13,36 @@
     <header class="topbar">
       <div class="brandmark"><span>Z</span><i>✦</i></div>
       <div><div class="brand">ZetuCash</div><div class="tagline">Save today. Unlock more tomorrow.</div></div>
-      <span class="demo">PREVIEW</span>
+      <button class="demo" id="logout-button" hidden>LOG OUT</button>
     </header>
 
-    <section id="dashboard-view">
+    <section id="auth-view" class="auth-card">
+      <div class="auth-tabs"><button id="show-login" class="auth-tab active" type="button">Log in</button><button id="show-register" class="auth-tab" type="button">Create account</button></div>
+      <div id="login-panel">
+        <p class="eyebrow">WELCOME BACK</p><h2>Log in to ZetuCash</h2><p class="auth-copy">Use your registered email address and password.</p>
+        <form id="login-form" autocomplete="on">
+          <label for="login-email">Email address</label><input class="auth-input" id="login-email" name="email" type="email" inputmode="email" autocomplete="username" placeholder="you@example.com" maxlength="254" required>
+          <label for="login-password">Password</label><input class="auth-input" id="login-password" name="password" type="password" autocomplete="current-password" minlength="8" required>
+          <button class="button main-button" type="submit">Log in securely</button>
+        </form>
+      </div>
+      <div id="register-panel" hidden>
+        <p class="eyebrow">GET STARTED</p><h2>Create your account</h2><p class="auth-copy">Enter your legal full name, Kenyan ID number, email and M-Pesa phone number. You will use your email and password to log in.</p>
+        <form id="register-form" autocomplete="on">
+          <label for="register-name">Real full name (as shown on your ID)</label><input class="auth-input" id="register-name" name="fullName" type="text" autocomplete="name" maxlength="100" placeholder="Your first, middle and last name" required>
+          <label for="register-id">Kenyan national ID number</label><input class="auth-input" id="register-id" name="nationalId" type="text" inputmode="numeric" autocomplete="off" maxlength="12" pattern="[0-9]{5,12}" placeholder="Enter ID number" required>
+          <label for="register-email">Email address</label><input class="auth-input" id="register-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
+          <label for="register-phone">M-Pesa phone number (for transactions)</label><input class="auth-input" id="register-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required>
+          <label for="register-password">Create password</label><input class="auth-input" id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder="At least 8 characters" required>
+          <label for="register-confirm">Confirm password</label><input class="auth-input" id="register-confirm" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
+          <button class="button main-button" type="submit">Create account</button>
+          <p class="fineprint">Your ID number is sensitive personal information. It must be stored securely and used only for stated, lawful purposes. Never share your password or M-Pesa PIN.</p>
+        </form>
+      </div>
+      <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="dashboard-view" hidden>
       <section class="welcome">
         <div class="welcome-copy">
           <p class="eyebrow">YOUR MONEY, YOUR NEXT MOVE</p>
@@ -30,18 +56,18 @@
       <section class="stats">
         <article class="card">
           <span class="stat-icon savings-icon">↗</span><span class="label">Your savings</span>
-          <strong id="savings">KSh 100</strong>
+          <strong id="savings">KSh 0</strong>
           <small>Your own savings balance</small>
         </article>
         <article class="card primary">
           <span class="stat-icon limit-icon">✦</span><span class="label">Available loan limit</span>
-          <strong id="loan-limit">KSh 150</strong>
+          <strong id="loan-limit">KSh 0</strong>
           <small>Eligible savings × 1.5</small>
         </article>
         <article class="card debt-card">
           <span class="stat-icon debt-icon">⌁</span><span class="label">Outstanding debt</span>
           <strong id="outstanding">KSh 0</strong>
-          <small id="loan-status">No active loan in this preview</small>
+          <small id="loan-status">No active loan</small>
         </article>
       </section>
 
@@ -52,7 +78,7 @@
         <article class="wallet">
           <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span></div>
           <p>Build your savings to increase your loan limit.</p>
-          <button class="button secondary" id="save-button">＋ Save KSh 100 (demo)</button>
+          <button class="button secondary" id="save-button">＋ Deposit to savings</button>
           <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
         </article>
         <article class="wallet">
@@ -60,33 +86,52 @@
           <strong id="loan-wallet">KSh 0</strong>
           <p>Loan funds credited to your wallet</p>
           <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
-          <button class="text-button" id="repay-button">Demo: mark loan repaid</button>
+          <button class="text-button" id="repay-button">View repayment information</button>
         </article>
       </section>
     </section>
 
     <section class="apply card loan-view" id="loan-view" hidden>
       <button class="text-button back-button" id="back-dashboard">← Back to account overview</button>
-      <p class="eyebrow">LOAN APPLICATION</p>
-      <h2>Apply for a loan</h2>
-      <p class="explain">Choose an amount up to your available limit. You must fully repay an existing loan before applying again.</p>
-      <div class="limit-line"><span>Your current loan limit</span><strong id="limit-inline">KSh 150</strong></div>
-      <label for="principal">How much would you like to borrow?</label>
-      <div class="input-row"><span>KSh</span><input id="principal" type="number" min="1" step="1" value="150" inputmode="numeric"></div>
-      <div class="quote">
-        <div><span>Loan amount</span><strong id="quote-principal">KSh 150</strong></div>
-        <div><span>Illustrative charge</span><strong id="quote-charge">KSh 20</strong></div>
-        <div><span>Total repayment</span><strong id="quote-total">KSh 170</strong></div>
-        <div><span>Repayment period</span><strong id="quote-days">14 days</strong></div>
+      <div id="kyc-panel">
+        <p class="eyebrow">FIRST-TIME LOAN APPLICATION</p>
+        <h2>Verify your identity</h2>
+        <p class="explain">Before your first loan, complete this form and upload clear photos of both sides of your national ID plus a selfie. Your application will be reviewed; submitting it does not mean you are automatically verified.</p>
+        <div id="kyc-status" class="warning">Checking your verification status…</div>
+        <form id="kyc-form" enctype="multipart/form-data">
+          <label for="kyc-full-name">Full legal name</label><input class="auth-input" id="kyc-full-name" name="fullName" type="text" maxlength="100" required>
+          <label for="kyc-id-number">National ID number</label><input class="auth-input" id="kyc-id-number" name="nationalId" type="text" inputmode="numeric" pattern="[0-9]{5,12}" maxlength="12" required>
+          <label for="kyc-dob">Date of birth</label><input class="auth-input" id="kyc-dob" name="dateOfBirth" type="date" required>
+          <label for="kyc-county">County</label><input class="auth-input" id="kyc-county" name="county" type="text" maxlength="60" placeholder="e.g. Mombasa" required>
+          <label for="kyc-town">Town / estate</label><input class="auth-input" id="kyc-town" name="town" type="text" maxlength="100" required>
+          <label for="kyc-address">Physical address / landmark</label><input class="auth-input" id="kyc-address" name="physicalAddress" type="text" maxlength="180" required>
+          <label for="kyc-employment">Employment status</label><select class="auth-input" id="kyc-employment" name="employmentStatus" required><option value="">Choose one</option><option>Employed</option><option>Self-employed</option><option>Casual worker</option><option>Student</option><option>Unemployed</option><option>Other</option></select>
+          <label for="kyc-income">Approximate monthly income (KSh)</label><input class="auth-input" id="kyc-income" name="monthlyIncome" type="number" min="0" max="100000000" step="1" inputmode="numeric" required>
+          <label for="kyc-purpose">What will the loan be used for?</label><select class="auth-input" id="kyc-purpose" name="loanPurpose" required><option value="">Choose a purpose</option><option>Business</option><option>School fees</option><option>Medical expenses</option><option>Household needs</option><option>Emergency</option><option>Other</option></select>
+          <label for="id-front">National ID — front photo</label><input class="auth-input file-input" id="id-front" name="idFront" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
+          <label for="id-back">National ID — back photo</label><input class="auth-input file-input" id="id-back" name="idBack" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
+          <label for="id-selfie">Your selfie</label><input class="auth-input file-input" id="id-selfie" name="selfie" type="file" accept="image/jpeg,image/png,image/webp" capture="user" required>
+          <p class="fineprint">Upload clear images (JPEG, PNG or WebP; up to 3 MB each). Your ID images and personal details are sensitive. They must only be reviewed by authorised staff and handled under ZetuCash's privacy policy.</p>
+          <label class="consent-row"><input id="kyc-consent" type="checkbox" required> I confirm these details are accurate and consent to their use for identity and loan eligibility review as explained in the privacy notice.</label>
+          <button class="button main-button" id="submit-kyc" type="submit">Submit for verification</button>
+        </form>
       </div>
-      <div class="warning">Preview only: charges and repayment terms are illustrative, not a final lending offer.</div>
-      <button class="button main-button" id="apply-button">Submit loan application (demo)</button>
-      <p class="fineprint">No real money is transferred. Real login, M-Pesa payments, loan approvals, secure balances and compliance checks are not connected.</p>
+      <div id="loan-amount-panel" hidden>
+        <p class="eyebrow">VERIFICATION APPROVED</p><h2>Apply for a loan</h2>
+        <p class="explain">Your identity review is approved. Choose an amount up to your current savings-based limit. Existing loans must be repaid before a new request.</p>
+        <div class="limit-line"><span>Your current loan limit</span><strong id="limit-inline">KSh 0</strong></div>
+        <label for="principal">How much would you like to borrow?</label>
+        <div class="input-row"><span>KSh</span><input id="principal" type="number" min="1" step="1" value="150" inputmode="numeric"></div>
+        <div class="quote"><div><span>Loan amount</span><strong id="quote-principal">KSh 150</strong></div><div><span>Illustrative charge</span><strong id="quote-charge">KSh 20</strong></div><div><span>Total repayment</span><strong id="quote-total">KSh 170</strong></div><div><span>Repayment period</span><strong id="quote-days">14 days</strong></div></div>
+        <div class="warning">The charge and repayment period shown are illustrative only and are not a final lending offer.</div>
+        <button class="button main-button" id="apply-button">Request loan review</button>
+        <p class="fineprint">A verified identity does not guarantee loan approval. Loan approval and disbursement must be completed by the authorised lending process.</p>
+      </div>
     </section>
 
     <section class="notice" aria-live="polite">
-      <strong id="notice-title">ZetuCash preview</strong>
-      <p id="notice">Try the demo buttons to see how the dashboard responds. Changes reset when you refresh.</p>
+      <strong id="notice-title">ZetuCash</strong>
+      <p id="notice">Create an account or log in to view your account overview.</p>
     </section>
     <footer>ZetuCash · Save today. Unlock more tomorrow.</footer>
   </main>

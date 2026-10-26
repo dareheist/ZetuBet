@@ -1,79 +1,136 @@
 (() => {
-  let savings = 100;
-  let loanWallet = 0;
-  let outstanding = 0;
   const $ = (id) => document.getElementById(id);
-  const money = (n) => "KSh " + Math.round(n).toLocaleString("en-KE");
-  const limit = () => Math.floor(savings * 1.5);
-  const days = (n) => n <= 500 ? 14 : n <= 1500 ? 21 : n <= 5000 ? 30 : n <= 10000 ? 45 : 60;
-  const quote = () => {
-    const n = Math.max(0, Number($("principal").value) || 0);
-    const charge = Math.round(n * (20 / 150));
-    $("quote-principal").textContent = money(n);
-    $("quote-charge").textContent = money(charge);
-    $("quote-total").textContent = money(n + charge);
-    $("quote-days").textContent = days(n) + " days";
+  const money = (n) => 'KSh ' + Math.round(Number(n) || 0).toLocaleString('en-KE');
+  let currentUser = null;
+  const api = async (url, options = {}) => {
+    const response = await fetch(url, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+    return data;
   };
-  function render() {
-    $("savings").textContent = money(savings);
-    $("loan-wallet").textContent = money(loanWallet);
-    $("loan-limit").textContent = money(limit());
-    $("limit-inline").textContent = money(limit());
-    $("outstanding").textContent = money(outstanding);
-    $("loan-status").textContent = outstanding > 0 ? "Repay in full before a new loan" : "No active loan in this preview";
-    $("apply-button").disabled = outstanding > 0;
-    quote();
+  function authMessage(message, success = false) {
+    $('auth-message').textContent = message || '';
+    $('auth-message').classList.toggle('success', success);
   }
   function notice(title, message) {
-    $("notice-title").textContent = title;
-    $("notice").textContent = message;
+    $('notice-title').textContent = title;
+    $('notice').textContent = message;
   }
-  function showLoanSection() {
-    $("dashboard-view").hidden = true;
-    $("loan-view").hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    quote();
+  function showLogin() {
+    $('login-panel').hidden = false; $('register-panel').hidden = true;
+    $('show-login').classList.add('active'); $('show-register').classList.remove('active'); authMessage('');
   }
-  function showDashboard() {
-    $("loan-view").hidden = true;
-    $("dashboard-view").hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function showRegister() {
+    $('login-panel').hidden = true; $('register-panel').hidden = false;
+    $('show-register').classList.add('active'); $('show-login').classList.remove('active'); authMessage('');
   }
-  $("open-loan-button").addEventListener("click", showLoanSection);
-  $("back-dashboard").addEventListener("click", showDashboard);
-  $("principal").addEventListener("input", quote);
-  $("save-button").addEventListener("click", () => {
-    savings += 100;
-    render();
-    notice("Demo saving recorded", "KSh 100 was added to the sample Savings Wallet. No real payment was processed.");
-  });
-  $("apply-button").addEventListener("click", () => {
-    const principal = Number($("principal").value);
-    if (outstanding > 0) {
-      notice("Loan not available", "Repay your current loan in full before applying again.");
-      return;
+  function renderUser(user) {
+    currentUser = user;
+    $('auth-view').hidden = !!user;
+    $('dashboard-view').hidden = !user;
+    $('logout-button').hidden = !user;
+    if (!user) return;
+    $('savings').textContent = money(user.savingsBalance);
+    $('loan-wallet').textContent = money(user.loanWalletBalance);
+    $('loan-limit').textContent = money(user.loanLimit);
+    $('limit-inline').textContent = money(user.loanLimit);
+    $('outstanding').textContent = money(user.outstandingDebt);
+    $('loan-status').textContent = user.outstandingDebt > 0 ? 'Repay in full before a new loan' : 'No active loan recorded';
+    $('apply-button').disabled = user.outstandingDebt > 0;
+    let strip = $('account-strip');
+    if (!strip) {
+      strip = document.createElement('div'); strip.id = 'account-strip'; strip.className = 'account-strip';
+      $('dashboard-view').prepend(strip);
     }
-    if (!Number.isFinite(principal) || principal < 1 || principal > limit()) {
-      notice("Check loan amount", "Enter an amount between KSh 1 and your current limit of " + money(limit()) + ".");
-      return;
-    }
-    const charge = Math.round(principal * (20 / 150));
-    loanWallet += principal;
-    outstanding = principal + charge;
-    render();
-    notice("Demo loan request", money(principal) + " was added to the sample Loan Wallet. Illustrative repayment is " + money(outstanding) + " in " + days(principal) + " days. No real money moved.");
-    showDashboard();
+    strip.textContent = `Welcome, ${user.fullName} · ${user.email || ''} · M-Pesa: ${user.phone}`;
+    $('loan-wallet').textContent = money(user.loanWalletBalance);
+  }
+  const days = (n) => n <= 500 ? 14 : n <= 1500 ? 21 : n <= 5000 ? 30 : n <= 10000 ? 45 : 60;
+  function quote() {
+    const n = Math.max(0, Number($('principal').value) || 0);
+    const charge = Math.round(n * (20 / 150));
+    $('quote-principal').textContent = money(n);
+    $('quote-charge').textContent = money(charge);
+    $('quote-total').textContent = money(n + charge);
+    $('quote-days').textContent = days(n) + ' days';
+  }
+  async function showLoan() {
+    $('dashboard-view').hidden = true; $('loan-view').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('kyc-panel').hidden = false; $('loan-amount-panel').hidden = true; $('kyc-form').hidden = false;
+    $('kyc-full-name').value = currentUser?.fullName || '';
+    $('kyc-status').textContent = 'Checking your verification status…';
+    try {
+      const data = await api('/api/loan/application-status');
+      if (data.status === 'verified') {
+        $('kyc-panel').hidden = true; $('loan-amount-panel').hidden = false; quote();
+      } else if (data.status === 'pending') {
+        $('kyc-status').textContent = 'Your documents are awaiting review. You cannot request a loan until an authorised reviewer verifies them.';
+        $('kyc-form').hidden = true;
+      } else {
+        $('kyc-form').hidden = false;
+        $('kyc-status').textContent = data.status === 'rejected' ? `Your last application was not approved. ${data.reviewNote || 'Please check your details and submit again.'}` : 'Complete the form below. Your application will be pending until a reviewer checks it.';
+      }
+    } catch (error) { $('kyc-status').textContent = error.message; }
+  }
+  function showDashboard() { $('loan-view').hidden = true; $('dashboard-view').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  $('show-login').addEventListener('click', showLogin);
+  $('show-register').addEventListener('click', showRegister);
+  $('login-form').addEventListener('submit', async (event) => {
+    event.preventDefault(); authMessage('Logging in…');
+    try {
+      const data = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: $('login-email').value, password: $('login-password').value }) });
+      renderUser(data.user); notice('Logged in successfully', 'Your account details have loaded from the database.');
+    } catch (error) { authMessage(error.message); }
   });
-  $("repay-button").addEventListener("click", () => {
-    if (outstanding <= 0) {
-      notice("No active loan", "There is no sample loan to mark as repaid.");
-      return;
-    }
-    outstanding = 0;
-    render();
-    notice("Demo repayment", "The sample loan is marked as repaid. No real repayment was processed.");
+  $('register-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if ($('register-password').value !== $('register-confirm').value) return authMessage('The passwords do not match.');
+    authMessage('Creating your account…');
+    try {
+      const data = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ fullName: $('register-name').value, nationalId: $('register-id').value, email: $('register-email').value, phone: $('register-phone').value, password: $('register-password').value }) });
+      renderUser(data.user); notice('Account created', 'Your M-Pesa number is saved to your account. Deposits and withdrawals will be enabled after payment integration is completed.');
+    } catch (error) { authMessage(error.message); }
   });
-  $("withdraw-savings").addEventListener("click", () => notice("Savings withdrawal", "A real M-Pesa withdrawal is not connected in this preview. Your sample balance has not changed."));
-  $("withdraw-loan").addEventListener("click", () => notice("Loan Wallet withdrawal", "A real M-Pesa withdrawal is not connected in this preview. Your sample balance has not changed."));
-  render();
+  $('logout-button').addEventListener('click', async () => {
+    try { await api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch (_) {}
+    renderUser(null); showLogin(); notice('Logged out', 'Log in again to view your account.');
+  });
+  $('open-loan-button').addEventListener('click', showLoan);
+  $('back-dashboard').addEventListener('click', showDashboard);
+  $('principal').addEventListener('input', quote);
+  $('save-button').addEventListener('click', () => notice('Deposits not enabled yet', 'The account is connected, but real M-Pesa deposits are not enabled yet. Do not send money to this app until the ZetuPay integration is completed and tested.'));
+  $('withdraw-savings').addEventListener('click', () => notice('Withdrawals not enabled yet', 'Your balance has not changed. Savings withdrawals will be available after ZetuPay payout integration is completed and verified.'));
+  $('withdraw-loan').addEventListener('click', () => notice('Withdrawals not enabled yet', 'Loan Wallet withdrawals are not enabled yet. No money has been moved.'));
+  $('repay-button').addEventListener('click', () => notice('Repayment information', 'Repayment processing is not connected yet. Your outstanding balance has not changed.'));
+  $('kyc-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const files = ['id-front', 'id-back', 'id-selfie'];
+    for (const id of files) {
+      const file = $(id).files[0];
+      if (!file) return notice('Missing document', 'Please upload the front and back of your ID and a selfie.');
+      if (file.size > 3 * 1024 * 1024) return notice('Image too large', 'Each ID photo or selfie must be 3 MB or smaller.');
+    }
+    const button = $('submit-kyc'); button.disabled = true; button.textContent = 'Submitting securely…';
+    try {
+      const formData = new FormData($('kyc-form'));
+      formData.set('nationalId', $('kyc-id-number').value.trim());
+      const response = await fetch('/api/loan/application', { method: 'POST', body: formData, credentials: 'same-origin' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not submit your application.');
+      $('kyc-form').hidden = true;
+      $('kyc-status').textContent = data.message || 'Your application is pending review.';
+      notice('Verification submitted', 'Your ID photos and details have been submitted for review. You cannot request a loan until verification is approved.');
+    } catch (error) { notice('Could not submit application', error.message); }
+    finally { button.disabled = false; button.textContent = 'Submit for verification'; }
+  });
+  $('apply-button').addEventListener('click', async () => {
+    const principal = Number($('principal').value);
+    try {
+      const data = await api('/api/loan/request', { method: 'POST', body: JSON.stringify({ principal }) });
+      notice('Loan request submitted', `Your request for ${money(data.principal)} is pending review. Illustrative charge: ${money(data.charge)}; total repayment: ${money(data.total)} in ${data.days} days. No loan has been approved or disbursed.`);
+      showDashboard();
+    } catch (error) { notice('Loan quote unavailable', error.message); }
+  });
+  api('/api/auth/me').then(data => renderUser(data.user)).catch(() => renderUser(null));
 })();
