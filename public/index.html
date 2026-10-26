@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#146c4b">
+  <meta name="description" content="ZetuCash savings-based lending app preview">
+  <title>ZetuCash | Save today. Unlock more tomorrow.</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brandmark">Z</div>
+      <div><div class="brand">ZetuCash</div><div class="tagline">Save today. Unlock more tomorrow.</div></div>
+      <span class="demo">PREVIEW</span>
+    </header>
+
+    <section class="welcome">
+      <p class="eyebrow">YOUR MONEY, ORGANIZED</p>
+      <h1>Welcome to ZetuCash</h1>
+      <p>Your eligible savings determine your maximum loan limit.</p>
+    </section>
+
+    <section class="stats">
+      <article class="card primary">
+        <span class="label">Available loan limit</span>
+        <strong id="loan-limit">KSh 150</strong>
+        <small>Eligible savings × 1.5</small>
+      </article>
+      <article class="card">
+        <span class="label">Outstanding repayment</span>
+        <strong id="outstanding">KSh 0</strong>
+        <small id="loan-status">No active loan in this preview</small>
+      </article>
+    </section>
+
+    <section class="wallets">
+      <article class="wallet">
+        <div class="wallet-head"><span class="wallet-icon">S</span><span class="label">Savings Wallet</span></div>
+        <strong id="savings">KSh 100</strong>
+        <p>Your own eligible savings</p>
+        <button class="button secondary" id="save-button">＋ Save KSh 100 (demo)</button>
+        <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
+      </article>
+      <article class="wallet">
+        <div class="wallet-head"><span class="wallet-icon loan">L</span><span class="label">Loan Wallet</span></div>
+        <strong id="loan-wallet">KSh 0</strong>
+        <p>Loan funds credited to your wallet</p>
+        <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
+        <button class="text-button" id="repay-button">Demo: mark loan repaid</button>
+      </article>
+    </section>
+
+    <section class="apply card">
+      <p class="eyebrow">SAVINGS-BASED LOAN</p>
+      <h2>Apply for a loan</h2>
+      <p class="explain">Your maximum loan is 1.5 times your savings. You must fully repay an existing loan before applying again.</p>
+      <div class="limit-line"><span>Your current loan limit</span><strong id="limit-inline">KSh 150</strong></div>
+      <label for="principal">How much would you like to borrow?</label>
+      <div class="input-row"><span>KSh</span><input id="principal" type="number" min="1" step="1" value="150" inputmode="numeric"></div>
+      <div class="quote">
+        <div><span>Loan amount</span><strong id="quote-principal">KSh 150</strong></div>
+        <div><span>Illustrative charge</span><strong id="quote-charge">KSh 20</strong></div>
+        <div><span>Total repayment</span><strong id="quote-total">KSh 170</strong></div>
+        <div><span>Repayment period</span><strong id="quote-days">14 days</strong></div>
+      </div>
+      <div class="warning">Preview only: charges and repayment terms are illustrative, not a final lending offer.</div>
+      <button class="button main-button" id="apply-button">Apply for loan (demo)</button>
+      <p class="fineprint">No real money is transferred. Real login, M-Pesa payments, loan approvals, secure balances and compliance checks are not connected.</p>
+    </section>
+
+    <section class="notice" aria-live="polite">
+      <strong id="notice-title">ZetuCash preview</strong>
+      <p id="notice">Try the demo buttons to see how the dashboard responds. Changes reset when you refresh.</p>
+    </section>
+    <footer>ZetuCash · Save today. Unlock more tomorrow.</footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
