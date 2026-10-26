@@ -11,51 +11,65 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <div class="brandmark">Z</div>
+      <div class="brandmark"><span>Z</span><i>✦</i></div>
       <div><div class="brand">ZetuCash</div><div class="tagline">Save today. Unlock more tomorrow.</div></div>
       <span class="demo">PREVIEW</span>
     </header>
 
-    <section class="welcome">
-      <p class="eyebrow">YOUR MONEY, ORGANIZED</p>
-      <h1>Welcome to ZetuCash</h1>
-      <p>Your eligible savings determine your maximum loan limit.</p>
+    <section id="dashboard-view">
+      <section class="welcome">
+        <div class="welcome-copy">
+          <p class="eyebrow">YOUR MONEY, YOUR NEXT MOVE</p>
+          <h1>Small savings.<br><span>Big possibilities.</span></h1>
+          <p>Your savings today can open the door to tomorrow.</p>
+          <div class="trust-pill"><span class="sparkle">✦</span> Save today. Unlock more tomorrow.</div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="coin coin-back">KSh</div><div class="coin coin-front">↗</div><div class="art-star">✦</div></div>
+      </section>
+
+      <section class="stats">
+        <article class="card">
+          <span class="stat-icon savings-icon">↗</span><span class="label">Your savings</span>
+          <strong id="savings">KSh 100</strong>
+          <small>Your own savings balance</small>
+        </article>
+        <article class="card primary">
+          <span class="stat-icon limit-icon">✦</span><span class="label">Available loan limit</span>
+          <strong id="loan-limit">KSh 150</strong>
+          <small>Eligible savings × 1.5</small>
+        </article>
+        <article class="card debt-card">
+          <span class="stat-icon debt-icon">⌁</span><span class="label">Outstanding debt</span>
+          <strong id="outstanding">KSh 0</strong>
+          <small id="loan-status">No active loan in this preview</small>
+        </article>
+      </section>
+
+      <button class="button main-button apply-entry" id="open-loan-button"><span>Apply for a loan</span><span class="button-arrow">→</span></button>
+      <p class="dashboard-hint">Tap above to view your loan options and repayment details.</p>
+
+      <section class="wallets">
+        <article class="wallet">
+          <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span></div>
+          <p>Build your savings to increase your loan limit.</p>
+          <button class="button secondary" id="save-button">＋ Save KSh 100 (demo)</button>
+          <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
+        </article>
+        <article class="wallet">
+          <div class="wallet-head"><span class="wallet-icon loan">↗</span><span class="label">Loan Wallet</span></div>
+          <strong id="loan-wallet">KSh 0</strong>
+          <p>Loan funds credited to your wallet</p>
+          <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
+          <button class="text-button" id="repay-button">Demo: mark loan repaid</button>
+        </article>
+      </section>
     </section>
 
-    <section class="stats">
-      <article class="card primary">
-        <span class="label">Available loan limit</span>
-        <strong id="loan-limit">KSh 150</strong>
-        <small>Eligible savings × 1.5</small>
-      </article>
-      <article class="card">
-        <span class="label">Outstanding repayment</span>
-        <strong id="outstanding">KSh 0</strong>
-        <small id="loan-status">No active loan in this preview</small>
-      </article>
-    </section>
-
-    <section class="wallets">
-      <article class="wallet">
-        <div class="wallet-head"><span class="wallet-icon">S</span><span class="label">Savings Wallet</span></div>
-        <strong id="savings">KSh 100</strong>
-        <p>Your own eligible savings</p>
-        <button class="button secondary" id="save-button">＋ Save KSh 100 (demo)</button>
-        <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
-      </article>
-      <article class="wallet">
-        <div class="wallet-head"><span class="wallet-icon loan">L</span><span class="label">Loan Wallet</span></div>
-        <strong id="loan-wallet">KSh 0</strong>
-        <p>Loan funds credited to your wallet</p>
-        <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
-        <button class="text-button" id="repay-button">Demo: mark loan repaid</button>
-      </article>
-    </section>
-
-    <section class="apply card">
-      <p class="eyebrow">SAVINGS-BASED LOAN</p>
+    <section class="apply card loan-view" id="loan-view" hidden>
+      <button class="text-button back-button" id="back-dashboard">← Back to account overview</button>
+      <p class="eyebrow">LOAN APPLICATION</p>
       <h2>Apply for a loan</h2>
-      <p class="explain">Your maximum loan is 1.5 times your savings. You must fully repay an existing loan before applying again.</p>
+      <p class="explain">Choose an amount up to your available limit. You must fully repay an existing loan before applying again.</p>
       <div class="limit-line"><span>Your current loan limit</span><strong id="limit-inline">KSh 150</strong></div>
       <label for="principal">How much would you like to borrow?</label>
       <div class="input-row"><span>KSh</span><input id="principal" type="number" min="1" step="1" value="150" inputmode="numeric"></div>
@@ -66,7 +80,7 @@
         <div><span>Repayment period</span><strong id="quote-days">14 days</strong></div>
       </div>
       <div class="warning">Preview only: charges and repayment terms are illustrative, not a final lending offer.</div>
-      <button class="button main-button" id="apply-button">Apply for loan (demo)</button>
+      <button class="button main-button" id="apply-button">Submit loan application (demo)</button>
       <p class="fineprint">No real money is transferred. Real login, M-Pesa payments, loan approvals, secure balances and compliance checks are not connected.</p>
     </section>
 

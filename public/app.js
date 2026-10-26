@@ -28,6 +28,19 @@
     $("notice-title").textContent = title;
     $("notice").textContent = message;
   }
+  function showLoanSection() {
+    $("dashboard-view").hidden = true;
+    $("loan-view").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    quote();
+  }
+  function showDashboard() {
+    $("loan-view").hidden = true;
+    $("dashboard-view").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  $("open-loan-button").addEventListener("click", showLoanSection);
+  $("back-dashboard").addEventListener("click", showDashboard);
   $("principal").addEventListener("input", quote);
   $("save-button").addEventListener("click", () => {
     savings += 100;
@@ -49,6 +62,7 @@
     outstanding = principal + charge;
     render();
     notice("Demo loan request", money(principal) + " was added to the sample Loan Wallet. Illustrative repayment is " + money(outstanding) + " in " + days(principal) + " days. No real money moved.");
+    showDashboard();
   });
   $("repay-button").addEventListener("click", () => {
     if (outstanding <= 0) {
