@@ -8,22 +8,25 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", app: "ZetuBet", mode: "demo" });
+  res.json({ status: "ok", app: "ZetuCash", mode: "demo-preview" });
 });
 
-// Demo-only sample fixtures. These odds are illustrative, not live odds.
-app.get("/api/sports", (_req, res) => {
-  res.json([
-    { id: "m1", league: "Premier League", home: "Arsenal", away: "Chelsea", kickoff: "Today · 18:00", homeOdds: 1.92, drawOdds: 3.40, awayOdds: 4.10 },
-    { id: "m2", league: "Premier League", home: "Liverpool", away: "Tottenham", kickoff: "Today · 20:30", homeOdds: 1.75, drawOdds: 3.80, awayOdds: 4.55 },
-    { id: "m3", league: "La Liga", home: "Real Madrid", away: "Barcelona", kickoff: "Tomorrow · 21:00", homeOdds: 2.15, drawOdds: 3.25, awayOdds: 2.90 }
-  ]);
+app.post("/api/loan/quote", (req, res) => {
+  const savings = Number(req.body && req.body.savings);
+  const principal = Number(req.body && req.body.principal);
+  if (!Number.isFinite(savings) || savings < 0 || !Number.isFinite(principal) || principal <= 0) {
+    return res.status(400).json({ error: "Enter valid savings and loan amount." });
+  }
+  const limit = Math.floor(savings * 1.5);
+  if (principal > limit) {
+    return res.status(400).json({ error: `Your current loan limit is KSh ${limit}.`, limit });
+  }
+  const charge = Math.round(principal * (20 / 150));
+  const days = principal <= 500 ? 14 : principal <= 1500 ? 21 : principal <= 5000 ? 30 : principal <= 10000 ? 45 : 60;
+  res.json({ limit, principal, charge, total: principal + charge, days, approved: false,
+    message: "Indicative quote only. No loan is approved and no money is moved." });
 });
 
-app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`ZetuBet demo running on port ${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", () => console.log(`ZetuCash preview running on port ${PORT}`));

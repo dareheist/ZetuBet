@@ -1,8 +1,8 @@
 {
-  "name": "zetubet",
+  "name": "zetucash",
   "version": "1.0.0",
   "private": true,
-  "description": "ZetuBet demo sports, casino and multiplier gaming platform",
+  "description": "ZetuCash savings-based lending app preview",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
