@@ -17,9 +17,11 @@ Open `http://localhost:3000`.
 - Savings Wallet and Loan Wallet preview
 - Sample loan limit calculation: savings × 1.5
 - Illustrative loan quote and repayment period
-- Demo save, loan request, repayment and withdrawal notices
+- ZetuPay hosted-checkout deposit initiation and signed transaction webhook
+- ZetuPay M-Pesa payouts with balance reservation, failure refunds, and payout webhook
+- Database-backed wallet transaction history
 - `GET /api/health`
 - `POST /api/loan/quote`
 
 ## Important
-This is only a visual/interaction preview. It does not provide secure customer accounts, persistent balances, real loan approvals, or live M-Pesa deposits/withdrawals. Do not use it to issue real loans or accept customer money. Before launching, implement secure authentication, a database-backed ledger, payment-provider integration and reconciliation, identity/security controls, and Kenyan legal/licensing/compliance review. The sample charge and repayment terms are illustrative and require proper review.
+Payments require `DATABASE_URL`, a strong `JWT_SECRET` (at least 32 characters), and `ZETUPAY_SECRET_KEY` configured in Railway. Set `ZETUPAY_WEBHOOK_SECRET` to your wallet’s live `sk_live_...` key for webhook signature verification (it may be the same value as `ZETUPAY_SECRET_KEY` when that is already the live key). Set `PUBLIC_APP_URL` to the public ZetuCash HTTPS domain if it differs from the default. Register `https://YOUR-DOMAIN/webhooks/zetupay` as the Transaction Callback Endpoint and `https://YOUR-DOMAIN/webhooks/zetupay/payout` as the Payout Callback Endpoint in ZetuPay. Webhooks are verified using the timestamped HMAC signature and transaction changes are idempotent. ZetuPay documents no sandbox: even test keys can move real money, so test only with small payments to your own phone. Before launch, also complete provider reconciliation, support processes, and Kenyan legal/licensing/compliance review. Loan quotes remain illustrative and loan requests are not automatically approved or disbursed.
