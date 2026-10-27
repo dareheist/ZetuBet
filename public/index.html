@@ -75,20 +75,47 @@
       <p class="dashboard-hint">Tap above to view your loan options and repayment details.</p>
 
       <section class="wallets">
-        <article class="wallet">
-          <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span></div>
+        <article class="wallet wallet-clickable" id="savings-wallet-card" role="button" tabindex="0" aria-label="Open Savings Wallet">
+          <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span><button class="wallet-arrow" id="open-savings-wallet" type="button" aria-label="Open Savings Wallet">→</button></div>
           <p>Build your savings to increase your loan limit.</p>
           <button class="button secondary" id="save-button">＋ Deposit to savings</button>
           <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
         </article>
-        <article class="wallet">
-          <div class="wallet-head"><span class="wallet-icon loan">↗</span><span class="label">Loan Wallet</span></div>
+        <article class="wallet wallet-clickable" id="loan-wallet-card" role="button" tabindex="0" aria-label="Open Loan Wallet">
+          <div class="wallet-head"><span class="wallet-icon loan">↗</span><span class="label">Loan Wallet</span><button class="wallet-arrow" id="open-loan-wallet" type="button" aria-label="Open Loan Wallet">→</button></div>
           <strong id="loan-wallet">KSh 0</strong>
           <p>Loan funds credited to your wallet</p>
           <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
           <button class="text-button" id="repay-button">View repayment information</button>
         </article>
       </section>
+    </section>
+
+    <section class="wallet-detail card" id="savings-view" hidden>
+      <button class="text-button back-button" id="back-from-savings">← Back to account overview</button>
+      <p class="eyebrow">YOUR MONEY</p><h2>Savings Wallet</h2>
+      <p class="explain">View your savings balance and enter the amount you want to deposit.</p>
+      <div class="wallet-balance-panel"><span>Available savings balance</span><strong id="savings-page-balance">KSh 0</strong></div>
+      <label for="deposit-amount">Deposit amount (KSh)</label>
+      <div class="input-row"><span>KSh</span><input id="deposit-amount" type="number" min="10" step="1" inputmode="numeric" placeholder="Enter amount" /></div>
+      <button class="button main-button" id="savings-deposit-continue" type="button">Continue to deposit</button>
+      <button class="text-button" id="savings-withdraw-entry" type="button">Withdraw from Savings Wallet</button>
+      <p class="fineprint" id="savings-payment-note">Payment status will be shown here. Do not send money outside the app.</p>
+    </section>
+
+    <section class="wallet-detail card" id="loan-wallet-view" hidden>
+      <button class="text-button back-button" id="back-from-loan-wallet">← Back to account overview</button>
+      <p class="eyebrow">LOAN ACCOUNT</p><h2>Loan Wallet</h2>
+      <p class="explain">Your loan funds and repayment summary.</p>
+      <div class="wallet-balance-panel loan-balance-panel"><span>Available Loan Wallet balance</span><strong id="loan-page-balance">KSh 0</strong></div>
+      <div class="wallet-detail-list">
+        <div><span>Outstanding amount to repay</span><strong id="loan-page-repayable">KSh 0</strong></div>
+        <div><span>Loan amount</span><strong id="loan-page-principal">Not available</strong></div>
+        <div><span>Repayment duration</span><strong id="loan-page-duration">Not available</strong></div>
+        <div><span>Repayment status</span><strong id="loan-page-status">No active loan</strong></div>
+      </div>
+      <button class="button secondary" id="loan-wallet-withdraw-entry" type="button">Withdraw from Loan Wallet</button>
+      <p class="fineprint">Loan amount and duration will appear when the approved loan details are available in your account.</p>
     </section>
 
     <section class="apply card loan-view" id="loan-view" hidden>

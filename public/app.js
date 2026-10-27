@@ -31,6 +31,10 @@
     $('logout-button').hidden = !user;
     if (!user) return;
     $('savings').textContent = money(user.savingsBalance);
+    $('savings-page-balance').textContent = money(user.savingsBalance);
+    $('loan-page-balance').textContent = money(user.loanWalletBalance);
+    $('loan-page-repayable').textContent = money(user.outstandingDebt);
+    $('loan-page-status').textContent = user.outstandingDebt > 0 ? 'Repayment due' : 'No active loan';
     $('loan-wallet').textContent = money(user.loanWalletBalance);
     $('loan-limit').textContent = money(user.loanLimit);
     $('limit-inline').textContent = money(user.loanLimit);
@@ -72,7 +76,26 @@
       }
     } catch (error) { $('kyc-status').textContent = error.message; }
   }
-  function showDashboard() { $('loan-view').hidden = true; $('dashboard-view').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function hideAccountPages() {
+    ['loan-view', 'savings-view', 'loan-wallet-view'].forEach(id => { $(id).hidden = true; });
+  }
+  function showDashboard() { hideAccountPages(); $('dashboard-view').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function showSavingsWallet() {
+    $('dashboard-view').hidden = true; hideAccountPages(); $('savings-view').hidden = false;
+    $('savings-page-balance').textContent = money(currentUser?.savingsBalance);
+    $('savings-payment-note').textContent = 'Enter an amount to continue. Payment processing must be connected and verified before real deposits can be accepted.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function showLoanWallet() {
+    $('dashboard-view').hidden = true; hideAccountPages(); $('loan-wallet-view').hidden = false;
+    $('loan-page-balance').textContent = money(currentUser?.loanWalletBalance);
+    $('loan-page-repayable').textContent = money(currentUser?.outstandingDebt);
+    $('loan-page-status').textContent = currentUser?.outstandingDebt > 0 ? 'Repayment due' : 'No active loan';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function openWalletFromKeyboard(event, callback) {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); callback(); }
+  }
 
   $('show-login').addEventListener('click', showLogin);
   $('show-register').addEventListener('click', showRegister);
@@ -89,7 +112,7 @@
     authMessage('Creating your account…');
     try {
       const data = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ fullName: $('register-name').value, nationalId: $('register-id').value, email: $('register-email').value, phone: $('register-phone').value, password: $('register-password').value }) });
-      renderUser(data.user); notice('Account created', 'Your M-Pesa number is saved to your account. You can now request deposits and withdrawals through ZetuPay.');
+      renderUser(data.user); notice('Account created', 'Your M-Pesa number is saved to your account. Deposits and withdrawals will be enabled after payment integration is completed.');
     } catch (error) { authMessage(error.message); }
   });
   $('logout-button').addEventListener('click', async () => {
@@ -98,24 +121,28 @@
   });
   $('open-loan-button').addEventListener('click', showLoan);
   $('back-dashboard').addEventListener('click', showDashboard);
+  $('back-from-savings').addEventListener('click', showDashboard);
+  $('back-from-loan-wallet').addEventListener('click', showDashboard);
+  $('open-savings-wallet').addEventListener('click', (event) => { event.stopPropagation(); showSavingsWallet(); });
+  $('open-loan-wallet').addEventListener('click', (event) => { event.stopPropagation(); showLoanWallet(); });
+  $('savings-wallet-card').addEventListener('click', (event) => { if (!event.target.closest('button')) showSavingsWallet(); });
+  $('loan-wallet-card').addEventListener('click', (event) => { if (!event.target.closest('button')) showLoanWallet(); });
+  $('savings-wallet-card').addEventListener('keydown', (event) => openWalletFromKeyboard(event, showSavingsWallet));
+  $('loan-wallet-card').addEventListener('keydown', (event) => openWalletFromKeyboard(event, showLoanWallet));
+  $('savings-deposit-continue').addEventListener('click', () => {
+    const amount = Number($('deposit-amount').value);
+    if (!Number.isInteger(amount) || amount < 10) {
+      $('savings-payment-note').textContent = 'Enter a whole KSh amount of at least 10.';
+      $('deposit-amount').focus(); return;
+    }
+    $('savings-payment-note').textContent = 'Amount entered: ' + money(amount) + '. The live ZetuPay checkout endpoint still needs to be connected and tested before payment can proceed.';
+  });
+  $('savings-withdraw-entry').addEventListener('click', () => $('withdraw-savings').click());
+  $('loan-wallet-withdraw-entry').addEventListener('click', () => $('withdraw-loan').click());
   $('principal').addEventListener('input', quote);
-  async function startDeposit() {
-    if (!currentUser) return notice('Log in required', 'Please log in before making a deposit.');
-    const amount = Number(window.prompt('Enter deposit amount in KSh (10–1,499):', '10'));
-    if (amount === 0 || !Number.isFinite(amount)) return;
-    try { const data = await api('/api/payments/deposit', { method: 'POST', body: JSON.stringify({ amount }) }); window.location.href = data.checkoutUrl; }
-    catch (error) { notice('Deposit could not start', error.message); }
-  }
-  async function startWithdrawal(wallet) {
-    if (!currentUser) return notice('Log in required', 'Please log in before requesting a withdrawal.');
-    const amount = Number(window.prompt('Enter withdrawal amount in KSh (10–1,000):', '10'));
-    if (amount === 0 || !Number.isFinite(amount)) return;
-    try { const data = await api('/api/payments/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) }); notice('Withdrawal submitted', `${data.message || 'Your withdrawal is being processed.'} Reference: ${data.reference}`); const fresh = await api('/api/auth/me'); renderUser(fresh.user); }
-    catch (error) { notice('Withdrawal could not be submitted', error.message); }
-  }
-  $('save-button').addEventListener('click', startDeposit);
-  $('withdraw-savings').addEventListener('click', () => startWithdrawal('savings'));
-  $('withdraw-loan').addEventListener('click', () => startWithdrawal('loan'));
+  $('save-button').addEventListener('click', () => notice('Deposits not enabled yet', 'The account is connected, but real M-Pesa deposits are not enabled yet. Do not send money to this app until the ZetuPay integration is completed and tested.'));
+  $('withdraw-savings').addEventListener('click', () => notice('Withdrawals not enabled yet', 'Your balance has not changed. Savings withdrawals will be available after ZetuPay payout integration is completed and verified.'));
+  $('withdraw-loan').addEventListener('click', () => notice('Withdrawals not enabled yet', 'Loan Wallet withdrawals are not enabled yet. No money has been moved.'));
   $('repay-button').addEventListener('click', () => notice('Repayment information', 'Repayment processing is not connected yet. Your outstanding balance has not changed.'));
   $('kyc-form').addEventListener('submit', async (event) => {
     event.preventDefault();
