@@ -89,7 +89,7 @@
     authMessage('Creating your account…');
     try {
       const data = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ fullName: $('register-name').value, nationalId: $('register-id').value, email: $('register-email').value, phone: $('register-phone').value, password: $('register-password').value }) });
-      renderUser(data.user); notice('Account created', 'Your M-Pesa number is saved to your account. Deposit and withdrawal requests are connected to ZetuPay, subject to successful payment processing and confirmation.');
+      renderUser(data.user); notice('Account created', 'Your M-Pesa number is saved to your account. You can now request deposits and withdrawals through ZetuPay.');
     } catch (error) { authMessage(error.message); }
   });
   $('logout-button').addEventListener('click', async () => {
@@ -99,33 +99,23 @@
   $('open-loan-button').addEventListener('click', showLoan);
   $('back-dashboard').addEventListener('click', showDashboard);
   $('principal').addEventListener('input', quote);
-  $('save-button').addEventListener('click', async () => {
-    const raw = window.prompt('How much would you like to deposit to Savings Wallet? Enter whole Kenyan shillings (minimum KSh 10).', '10');
-    if (raw === null) return;
-    const amount = Number(raw.trim());
-    if (!Number.isSafeInteger(amount) || amount < 10 || amount > 1000000) return notice('Invalid amount', 'Enter a whole amount from KSh 10 to KSh 1,000,000.');
-    const button = $('save-button'); button.disabled = true; button.textContent = 'Creating payment…';
-    try {
-      const data = await api('/api/payments/deposit', { method: 'POST', body: JSON.stringify({ amount }) });
-      notice('Continue to ZetuPay', 'Complete the payment on ZetuPay. Your Savings Wallet will update only after the signed payment confirmation is received.');
-      window.location.assign(data.checkoutUrl);
-    } catch (error) { notice('Deposit could not start', error.message); }
-    finally { button.disabled = false; button.textContent = '＋ Deposit to savings'; }
-  });
-  async function requestWithdrawal(wallet, title) {
-    const balance = wallet === 'savings' ? Number(currentUser?.savingsBalance || 0) : Number(currentUser?.loanWalletBalance || 0);
-    const raw = window.prompt(`${title} available: ${money(balance)}. Enter the whole amount to withdraw (minimum KSh 10).`, '10');
-    if (raw === null) return;
-    const amount = Number(raw.trim());
-    if (!Number.isSafeInteger(amount) || amount < 10 || amount > 1000000) return notice('Invalid amount', 'Enter a whole withdrawal amount from KSh 10 to KSh 1,000,000.');
-    try {
-      const data = await api('/api/wallets/withdraw', { method: 'POST', body: JSON.stringify({ wallet, amount }) });
-      if (data.user) renderUser(data.user);
-      notice('Withdrawal requested', `${money(amount)} has been reserved while ZetuPay processes the payout to your registered M-Pesa number. Your wallet will be refunded automatically if ZetuPay reports a failed payout.`);
-    } catch (error) { notice('Withdrawal could not start', error.message); }
+  async function startDeposit() {
+    if (!currentUser) return notice('Log in required', 'Please log in before making a deposit.');
+    const amount = Number(window.prompt('Enter deposit amount in KSh (10–1,499):', '10'));
+    if (amount === 0 || !Number.isFinite(amount)) return;
+    try { const data = await api('/api/payments/deposit', { method: 'POST', body: JSON.stringify({ amount }) }); window.location.href = data.checkoutUrl; }
+    catch (error) { notice('Deposit could not start', error.message); }
   }
-  $('withdraw-savings').addEventListener('click', () => requestWithdrawal('savings', 'Savings Wallet'));
-  $('withdraw-loan').addEventListener('click', () => requestWithdrawal('loan', 'Loan Wallet'));
+  async function startWithdrawal(wallet) {
+    if (!currentUser) return notice('Log in required', 'Please log in before requesting a withdrawal.');
+    const amount = Number(window.prompt('Enter withdrawal amount in KSh (10–1,000):', '10'));
+    if (amount === 0 || !Number.isFinite(amount)) return;
+    try { const data = await api('/api/payments/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) }); notice('Withdrawal submitted', `${data.message || 'Your withdrawal is being processed.'} Reference: ${data.reference}`); const fresh = await api('/api/auth/me'); renderUser(fresh.user); }
+    catch (error) { notice('Withdrawal could not be submitted', error.message); }
+  }
+  $('save-button').addEventListener('click', startDeposit);
+  $('withdraw-savings').addEventListener('click', () => startWithdrawal('savings'));
+  $('withdraw-loan').addEventListener('click', () => startWithdrawal('loan'));
   $('repay-button').addEventListener('click', () => notice('Repayment information', 'Repayment processing is not connected yet. Your outstanding balance has not changed.'));
   $('kyc-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -156,5 +146,5 @@
       showDashboard();
     } catch (error) { notice('Loan quote unavailable', error.message); }
   });
-  api('/api/auth/me').then(data => { renderUser(data.user); if (new URLSearchParams(window.location.search).get('payment') === 'return') { notice('Payment submitted', 'We are checking for the signed ZetuPay confirmation. Your Savings Wallet will update once the payment is verified.'); window.history.replaceState({}, '', window.location.pathname); } }).catch(() => renderUser(null));
+  api('/api/auth/me').then(data => renderUser(data.user)).catch(() => renderUser(null));
 })();
