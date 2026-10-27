@@ -317,18 +317,14 @@ const ZETUPAY_API = 'https://pay.zetupay.co.ke/api/v1';
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || 'https://zetucash-production.up.railway.app').replace(/\/$/, '');
 
 function verifyZetuPaySignature(req) {
-  const secret = process.env.ZETUPAY_WEBHOOK_SECRET || process.env.ZETUPAY_SECRET_KEY || '';
-  const header = String(req.get('x-zetupay-signature') || '');
-  if (!secret || !req.rawBody || !header) return false;
-  const parts = Object.fromEntries(header.split(',').map(part => {
-    const i = part.indexOf('=');
-    return i < 0 ? [part.trim(), ''] : [part.slice(0, i).trim(), part.slice(i + 1).trim()];
-  }));
-  const timestamp = Number(parts.t);
-  if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) >= 300 || !/^[a-f0-9]{64}$/i.test(parts.v1 || '')) return false;
-  const expected = crypto.createHmac('sha256', secret).update(`${parts.t}.${req.rawBody.toString('utf8')}`).digest();
-  const supplied = Buffer.from(parts.v1, 'hex');
-  return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+  // ZetuPay's documented webhook authentication is the x-zetupay-secret header.
+  // It must match the wallet's configured Secret Key exactly.
+  const expected = String(process.env.ZETUPAY_SECRET_KEY || '').trim();
+  const supplied = String(req.get('x-zetupay-secret') || '').trim();
+  if (!expected || !supplied) return false;
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  const suppliedBuffer = Buffer.from(supplied, 'utf8');
+  return expectedBuffer.length === suppliedBuffer.length && crypto.timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
 function newPaymentReference(prefix) {
@@ -467,9 +463,12 @@ app.post('/webhooks/zetupay', async (req, res) => {
 // Payout callback URL: https://zetucash-production.up.railway.app/webhooks/zetupay/payout
 app.post('/webhooks/zetupay/payout', async (req, res) => {
   if (!verifyZetuPaySignature(req)) return res.status(401).json({ error: 'Invalid ZetuPay webhook signature.' });
-  const payload = req.body || {};
-  const reference = String(payload.identifier || '');
-  const status = String(payload.status || '').toLowerCase();
+  const event = String(req.body && req.body.event || '').toLowerCase();
+  const payload = req.body && req.body.data && typeof req.body.data === 'object' ? req.body.data : (req.body || {});
+  const reference = String(payload.identifier || payload.reference || '');
+  let status = String(payload.status || '').toLowerCase();
+  if (event === 'payout.success') status = 'completed';
+  if (event === 'payout.failed') status = 'failed';
   if (!reference || !['completed', 'success', 'failed'].includes(status)) return res.status(200).json({ received: true, ignored: true });
   const client = await pool.connect();
   try {
@@ -482,9 +481,9 @@ app.post('/webhooks/zetupay/payout', async (req, res) => {
     if (status === 'failed') {
       const column = txn.wallet === 'savings' ? 'savings_balance' : 'loan_wallet_balance';
       await client.query(`UPDATE users SET ${column}=${column}+$1 WHERE id=$2`, [txn.amount, txn.user_id]);
-      await client.query("UPDATE wallet_transactions SET status='FAILED',provider_id=COALESCE(provider_id,$1),provider_receipt=$2,updated_at=NOW() WHERE id=$3", [payload.payoutID || null, payload.referenceNumber || null, txn.id]);
+      await client.query("UPDATE wallet_transactions SET status='FAILED',provider_id=COALESCE(provider_id,$1),provider_receipt=$2,updated_at=NOW() WHERE id=$3", [payload.payoutID || payload.waveTransactionId || null, payload.receiptNumber || payload.referenceNumber || null, txn.id]);
     } else {
-      await client.query("UPDATE wallet_transactions SET status='COMPLETED',provider_id=COALESCE(provider_id,$1),provider_receipt=$2,updated_at=NOW() WHERE id=$3", [payload.payoutID || null, payload.referenceNumber || null, txn.id]);
+      await client.query("UPDATE wallet_transactions SET status='COMPLETED',provider_id=COALESCE(provider_id,$1),provider_receipt=$2,updated_at=NOW() WHERE id=$3", [payload.payoutID || payload.waveTransactionId || null, payload.receiptNumber || payload.referenceNumber || null, txn.id]);
     }
     await client.query('COMMIT');
     return res.status(200).json({ received: true, updated: true });
