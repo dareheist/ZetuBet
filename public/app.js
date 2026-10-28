@@ -388,28 +388,72 @@
 
 
   // ============================================================
-  // 12. DEPOSIT TO SAVINGS WALLET — ZETUPAY
+  // 12. DEPOSIT TO SAVINGS WALLET — DIRECT ZETUPAY STK PUSH
+  // The customer stays on ZetuCash. No checkout redirect is used.
   // ============================================================
+
+  async function waitForDepositResult(reference, button) {
+    const maxChecks = 24;
+
+    for (let attempt = 0; attempt < maxChecks; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      let data;
+      try {
+        data = await api(`/api/payments/deposit/${encodeURIComponent(reference)}/status`);
+      } catch (error) {
+        $('savings-payment-note').textContent =
+          `The prompt was sent. Checking payment status… ${error.message}`;
+        continue;
+      }
+
+      if (data.status === 'success') {
+        try {
+          const account = await api('/api/auth/me');
+          renderUser(account.user);
+        } catch (_) {}
+
+        $('savings-page-balance').textContent = money(currentUser?.savingsBalance);
+        $('savings-payment-note').textContent =
+          `Payment confirmed. ${money(data.amount)} has been added to your savings wallet.`;
+        notice('Deposit successful', 'ZetuPay confirmed your M-Pesa payment and your savings balance has been updated.');
+        return;
+      }
+
+      if (['failed', 'cancelled', 'expired'].includes(data.status)) {
+        $('savings-payment-note').textContent =
+          data.status === 'cancelled'
+            ? 'The M-Pesa prompt was cancelled. Your savings balance has not changed. You can try again.'
+            : data.status === 'expired'
+              ? 'The M-Pesa prompt expired. Your savings balance has not changed. Please try again.'
+              : 'The payment failed. Your savings balance has not changed. Please try again.';
+        return;
+      }
+
+      $('savings-payment-note').textContent =
+        'STK Push sent. Check your phone and enter your M-Pesa PIN. Waiting for payment confirmation…';
+    }
+
+    $('savings-payment-note').textContent =
+      'We have not received final confirmation yet. Do not pay again immediately. Check your M-Pesa messages or refresh the wallet shortly.';
+  }
 
   $('savings-deposit-continue').addEventListener('click', async () => {
     const amount = Number($('deposit-amount').value);
 
-    // Accept any positive amount; no frontend maximum or minimum limit.
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 250000) {
       $('savings-payment-note').textContent =
-        'Enter a valid amount greater than zero.';
+        'Enter a whole-KSh amount from KSh 1 to KSh 250,000.';
 
       $('deposit-amount').focus();
       return;
     }
 
     const button = $('savings-deposit-continue');
-
     button.disabled = true;
-    button.textContent = 'Connecting to payment...';
-
+    button.textContent = 'Sending M-Pesa prompt…';
     $('savings-payment-note').textContent =
-      'Connecting to ZetuPay. Please wait...';
+      'Requesting an M-Pesa STK Push through ZetuPay. Please wait…';
 
     try {
       const data = await api('/api/payments/deposit', {
@@ -417,14 +461,15 @@
         body: JSON.stringify({ amount })
       });
 
-      if (!data.checkoutUrl) {
-        throw new Error(
-          'ZetuPay did not return a checkout link. Please try again later.'
-        );
+      if (!data.reference || !data.paymentKey) {
+        throw new Error('The payment provider did not confirm the STK Push request. Please try again later.');
       }
 
-      // Open the payment checkout returned by the backend.
-      window.location.href = data.checkoutUrl;
+      $('savings-payment-note').textContent =
+        'STK Push sent. Check your phone and enter your M-Pesa PIN. Your balance will update only after payment is confirmed.';
+
+      // Keep the user on ZetuCash and check the provider's verified status.
+      await waitForDepositResult(data.reference, button);
 
     } catch (error) {
       $('savings-payment-note').textContent = error.message;
