@@ -1,3 +1,6 @@
+// ============================================================
+// 1. IMPORTS
+// ============================================================
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
@@ -8,19 +11,47 @@ const { Pool } = require('pg');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 
+// ============================================================
+// 2. SERVER AND ENVIRONMENT CONFIGURATION
+// ============================================================
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const DATABASE_URL = process.env.DATABASE_URL;
 const production = process.env.NODE_ENV === 'production';
+const FRONTEND_URL = String(process.env.PUBLIC_APP_URL || process.env.FRONTEND_URL || '').trim().replace(/\/+$/, '');
 
 if (!DATABASE_URL) console.warn('WARNING: DATABASE_URL is not configured; account routes will be unavailable.');
 if (!JWT_SECRET || JWT_SECRET.length < 32) console.warn('WARNING: Set JWT_SECRET to a random secret of at least 32 characters.');
 const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 5 }) : null;
 
+// ============================================================
+// 3. SECURITY, CORS, MIDDLEWARE AND FILE UPLOADS
+// ============================================================
 app.disable('x-powered-by');
 // Railway terminates HTTPS at its proxy; trust the single platform proxy for rate limiting.
 app.set('trust proxy', 1);
+
+// ============================================================
+// 0. FRONTEND CONNECTION (separate Railway frontend service)
+// Set PUBLIC_APP_URL to https://zetucash-production-bd43.up.railway.app
+// ============================================================
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && FRONTEND_URL && origin === FRONTEND_URL) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  }
+  if (req.method === 'OPTIONS') {
+    if (origin && FRONTEND_URL && origin !== FRONTEND_URL) return res.status(403).end();
+    return res.status(204).end();
+  }
+  next();
+});
+
 app.use(express.json({ limit: '20kb' }));
 const kycUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 3, fields: 12 }, fileFilter: (_req, file, cb) => {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(new Error('Upload ID photos and selfie as JPEG, PNG, or WebP images only.'));
@@ -31,6 +62,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many attempts. Please wait 15 minutes and try again.' } });
 const kycLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many document submissions. Please wait before trying again.' } });
+// ============================================================
+// 4. SHARED HELPERS: DATABASE, PHONE, TOKENS AND AUTHENTICATION
+// ============================================================
 function dbRequired(_req, res, next) {
   if (!pool) return res.status(503).json({ error: 'Database is not configured. Add DATABASE_URL in your hosting environment.' });
   if (!JWT_SECRET || JWT_SECRET.length < 32) return res.status(503).json({ error: 'Authentication is not configured. Add a strong JWT_SECRET in your hosting environment.' });
@@ -46,7 +80,7 @@ function issueToken(userId) {
   return jwt.sign({ sub: String(userId) }, JWT_SECRET, { expiresIn: '7d', issuer: 'zetucash' });
 }
 function setAuthCookie(res, token) {
-  res.cookie('zetucash_session', token, { httpOnly: true, secure: production, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' });
+  res.cookie('zetucash_session', token, { httpOnly: true, secure: production, sameSite: production ? 'none' : 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' });
 }
 async function authRequired(req, res, next) {
   try {
@@ -58,10 +92,13 @@ async function authRequired(req, res, next) {
     req.user = result.rows[0];
     next();
   } catch (_error) {
-    res.clearCookie('zetucash_session', { path: '/' });
+    res.clearCookie('zetucash_session', { path: '/', httpOnly: true, secure: production, sameSite: production ? 'none' : 'lax' });
     return res.status(401).json({ error: 'Your session expired. Please log in again.' });
   }
 }
+// ============================================================
+// 5. DATABASE TABLES AND INITIALIZATION
+// ============================================================
 async function initializeDatabase() {
   if (!pool) return;
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
@@ -115,9 +152,15 @@ async function initializeDatabase() {
   console.log('Neon database tables are ready.');
 }
 
+// ============================================================
+// 6. HEALTH CHECK
+// ============================================================
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', app: 'ZetuCash', databaseConfigured: !!pool, mode: process.env.ZETUPAY_SECRET_KEY ? 'payments-configured' : 'account-foundation' }));
 
-// ZetuPay payment integration. Keep the secret key on the server only.
+// ============================================================
+// 7. ZETUPAY API CONFIGURATION
+// Keep the secret key on the server only.
+// ============================================================
 const ZETUPAY_BASE = 'https://pay.zetupay.co.ke/api/v1';
 async function zetupayPost(endpoint, body) {
   const key = process.env.ZETUPAY_SECRET_KEY;
@@ -127,13 +170,18 @@ async function zetupayPost(endpoint, body) {
   if (!response.ok) throw new Error(data.message || data.error || `ZetuPay request failed (${response.status}).`);
   return data;
 }
+// ============================================================
+// 8. DEPOSIT PAYMENT INITIATION
+// Minimum deposit: KSh 1; no application-level maximum.
+// ============================================================
 app.post('/api/payments/deposit', dbRequired, authRequired, async (req, res) => {
   const amount = Number(req.body && req.body.amount);
-  if (!Number.isInteger(amount) || amount < 10 || amount > 1499) return res.status(400).json({ error: 'Enter a whole-KSh deposit between KSh 10 and KSh 1,499.' });
+  if (!Number.isSafeInteger(amount) || amount < 1) return res.status(400).json({ error: 'Enter a whole-KSh deposit amount of at least KSh 1.' });
+  if (!FRONTEND_URL || !/^https:\/\//i.test(FRONTEND_URL)) return res.status(503).json({ error: 'Set PUBLIC_APP_URL to the full HTTPS address of the ZetuCash frontend in Railway Variables.' });
   const reference = `ZC-D-${req.user.id}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   try {
     await pool.query("INSERT INTO payment_transactions (user_id,reference,kind,wallet,amount,status) VALUES ($1,$2,'deposit','savings',$3,'pending')", [req.user.id, reference, amount]);
-    const result = await zetupayPost('/payment/initiate', { amount, phoneNumber: req.user.phone_e164, reference, currency: 'KES', redirectUrl: `${process.env.PUBLIC_APP_URL || ''}/?payment=return`, identifier: String(req.user.id) });
+    const result = await zetupayPost('/payment/initiate', { amount, phoneNumber: req.user.phone_e164, reference, currency: 'KES', redirectUrl: `${FRONTEND_URL}/?payment=return`, identifier: String(req.user.id) });
     const data = result.data || result;
     if (!data.checkoutUrl) throw new Error('ZetuPay did not return a checkout URL. Check your ZetuPay account and API response.');
     res.json({ checkoutUrl: data.checkoutUrl, reference, status: data.status || 'pending' });
@@ -143,6 +191,9 @@ app.post('/api/payments/deposit', dbRequired, authRequired, async (req, res) => 
     res.status(502).json({ error: error.message || 'Could not start the deposit. No balance was changed.' });
   }
 });
+// ============================================================
+// 9. WITHDRAWAL AND PAYOUT INITIATION
+// ============================================================
 app.post('/api/payments/withdraw', dbRequired, authRequired, async (req, res) => {
   const amount = Number(req.body && req.body.amount);
   const wallet = req.body && req.body.wallet === 'loan' ? 'loan' : 'savings';
@@ -175,39 +226,77 @@ app.post('/api/payments/withdraw', dbRequired, authRequired, async (req, res) =>
     res.status(502).json({ error: error.message || 'Could not submit withdrawal. If the request reached ZetuPay, contact support before retrying.' });
   } finally { client.release(); }
 });
-app.post('/webhooks/zetupay', async (req, res) => {
+// ============================================================
+// 10. ZETUPAY PAYMENT WEBHOOK — DEPOSIT CONFIRMATION
+// URL: POST /webhooks/zetupay
+// Credits a deposit only after a verified payment.success event.
+// ============================================================
+async function processZetuPayWebhook(req, res, expectedKind) {
   const expected = process.env.ZETUPAY_WEBHOOK_SECRET || process.env.ZETUPAY_SECRET_KEY || '';
   const supplied = String(req.get('x-zetupay-secret') || '');
-  if (!expected || supplied.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return res.status(401).json({ error: 'Invalid webhook secret.' });
+  if (!expected || supplied.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) {
+    return res.status(401).json({ error: 'Invalid webhook secret.' });
+  }
   const event = String(req.body && req.body.event || '').toLowerCase();
   const data = req.body && req.body.data || {};
   const reference = String(data.reference || data.identifier || '');
   if (!reference) return res.status(400).json({ error: 'Missing transaction reference.' });
+  if (!pool) return res.status(503).json({ error: 'Database is not configured.' });
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const found = await client.query('SELECT * FROM payment_transactions WHERE reference=$1 FOR UPDATE', [reference]);
-    if (!found.rowCount) { await client.query('ROLLBACK'); return res.status(200).json({ received: true, ignored: true }); }
+    if (!found.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(200).json({ received: true, ignored: true });
+    }
     const tx = found.rows[0];
-    const providerId = data.waveTransactionId || data.transactionId || null;
-    if (providerId) await client.query('UPDATE payment_transactions SET provider_id=COALESCE(provider_id,$1) WHERE id=$2', [String(providerId), tx.id]);
-    if (tx.kind === 'deposit' && event === 'payment.success' && tx.status !== 'success') {
-      if (Number(data.amount) !== Number(tx.amount)) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Payment amount does not match reference.' }); }
+    if (tx.kind !== expectedKind) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Webhook endpoint does not match transaction type.' });
+    }
+    const providerId = data.waveTransactionId || data.transactionId || data.id || null;
+    if (providerId) {
+      await client.query('UPDATE payment_transactions SET provider_id=COALESCE(provider_id,$1) WHERE id=$2', [String(providerId), tx.id]);
+    }
+
+    if (expectedKind === 'deposit' && event === 'payment.success' && tx.status !== 'success') {
+      if (Number(data.amount) !== Number(tx.amount)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Payment amount does not match reference.' });
+      }
       await client.query('UPDATE users SET savings_balance=savings_balance+$1 WHERE id=$2', [tx.amount, tx.user_id]);
       await client.query("UPDATE payment_transactions SET status='success',updated_at=NOW() WHERE id=$1", [tx.id]);
-    } else if (tx.kind === 'withdrawal' && ['payout.failed','payout.failure','payout.rejected','payout.cancelled'].includes(event) && !tx.refunded) {
+    } else if (expectedKind === 'withdrawal' && ['payout.failed','payout.failure','payout.rejected','payout.cancelled'].includes(event) && !tx.refunded) {
       const col = tx.wallet === 'loan' ? 'loan_wallet_balance' : 'savings_balance';
       await client.query(`UPDATE users SET ${col}=${col}+$1 WHERE id=$2`, [tx.amount, tx.user_id]);
       await client.query("UPDATE payment_transactions SET status='failed',refunded=TRUE,updated_at=NOW() WHERE id=$1", [tx.id]);
-    } else if (tx.kind === 'withdrawal' && ['payout.success','payout.completed','payout.successful'].includes(event)) {
+    } else if (expectedKind === 'withdrawal' && ['payout.success','payout.completed','payout.successful'].includes(event)) {
       await client.query("UPDATE payment_transactions SET status='success',updated_at=NOW() WHERE id=$1 AND status<>'success'", [tx.id]);
     }
     await client.query('COMMIT');
-    res.json({ received: true });
-  } catch (error) { await client.query('ROLLBACK').catch(()=>{}); console.error('ZetuPay webhook error:', error.message); res.status(500).json({ error: 'Webhook processing failed.' }); }
-  finally { client.release(); }
-});
+    return res.json({ received: true });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error(`ZetuPay ${expectedKind} webhook error:`, error.message);
+    return res.status(500).json({ error: 'Webhook processing failed.' });
+  } finally {
+    client.release();
+  }
+}
+app.post('/webhooks/zetupay', (req, res) => processZetuPayWebhook(req, res, 'deposit'));
 
+// ============================================================
+// 11. ZETUPAY PAYOUT WEBHOOK — WITHDRAWAL RESULT
+// URL: POST /webhooks/zetupay/payout
+// Marks successful payouts or refunds failed payouts once.
+// ============================================================
+app.post('/webhooks/zetupay/payout', (req, res) => processZetuPayWebhook(req, res, 'withdrawal'));
+
+// ============================================================
+// 12. USER REGISTRATION
+// ============================================================
 app.post('/api/auth/register', authLimiter, dbRequired, async (req, res) => {
   try {
     const fullName = String(req.body.fullName || '').trim().replace(/\s+/g, ' ');
@@ -233,6 +322,9 @@ app.post('/api/auth/register', authLimiter, dbRequired, async (req, res) => {
   }
 });
 
+// ============================================================
+// 13. USER LOGIN
+// ============================================================
 app.post('/api/auth/login', authLimiter, dbRequired, async (req, res) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
@@ -250,8 +342,11 @@ app.post('/api/auth/login', authLimiter, dbRequired, async (req, res) => {
   }
 });
 
+// ============================================================
+// 14. USER LOGOUT, ACCOUNT DETAILS AND SAFE USER RESPONSE
+// ============================================================
 app.post('/api/auth/logout', (_req, res) => {
-  res.clearCookie('zetucash_session', { httpOnly: true, secure: production, sameSite: 'lax', path: '/' });
+  res.clearCookie('zetucash_session', { httpOnly: true, secure: production, sameSite: production ? 'none' : 'lax', path: '/' });
   res.json({ message: 'You have been logged out.' });
 });
 app.get('/api/auth/me', dbRequired, authRequired, (req, res) => res.json({ user: safeUser(req.user) }));
@@ -259,6 +354,9 @@ function safeUser(user) {
   return { id: user.id, fullName: user.full_name, email: user.email || '', phone: user.phone_e164, savingsBalance: Number(user.savings_balance || 0), loanWalletBalance: Number(user.loan_wallet_balance || 0), outstandingDebt: Number(user.outstanding_debt || 0), loanLimit: Math.floor(Number(user.savings_balance || 0) * 1.5), createdAt: user.created_at };
 }
 
+// ============================================================
+// 15. ADMIN ACCESS, KYC REVIEW AND LOAN REQUEST APPROVAL/REJECTION
+// ============================================================
 // ADMIN REVIEW: protect these endpoints with a separate secret; never expose it in browser code.
 function adminReviewRequired(req, res, next) {
   const configured = process.env.ADMIN_REVIEW_TOKEN || '';
@@ -286,7 +384,45 @@ app.post('/api/admin/loan-applications/:id/review', dbRequired, adminReviewRequi
   } catch (error) { console.error('Admin KYC review error:', error.message); res.status(500).json({ error: 'Could not update review status.' }); }
 });
 
-// 5. LOAN APPLICATION SECTION — KYC status and secure document submission
+// ADMIN LOAN REQUEST QUEUE: submitted loan requests awaiting an admin decision.
+// GET /api/admin/loan-requests?status=pending
+app.get('/api/admin/loan-requests', dbRequired, adminReviewRequired, async (req, res) => {
+  const requestedStatus = String(req.query.status || 'pending').toLowerCase();
+  const allowedStatuses = ['pending', 'approved', 'rejected', 'disbursed', 'repaid', 'all'];
+  if (!allowedStatuses.includes(requestedStatus)) return res.status(400).json({ error: 'Invalid loan request status.' });
+  try {
+    const params = [];
+    let statusFilter = '';
+    if (requestedStatus !== 'all') { params.push(requestedStatus); statusFilter = `WHERE r.status = $${params.length}`; }
+    const result = await pool.query(`SELECT r.id, r.user_id, u.full_name, u.email, u.phone_e164, r.principal, r.charge, r.total_repayment, r.repayment_days, r.status, r.created_at
+      FROM loan_requests r JOIN users u ON u.id = r.user_id ${statusFilter}
+      ORDER BY CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END, r.created_at ASC LIMIT 200`, params);
+    res.json({ requests: result.rows.map(row => ({
+      id: row.id, userId: row.user_id, fullName: row.full_name, email: row.email || '', phone: row.phone_e164,
+      principal: Number(row.principal), charge: Number(row.charge), totalRepayment: Number(row.total_repayment),
+      repaymentDays: Number(row.repayment_days), status: row.status, submittedAt: row.created_at
+    })) });
+  } catch (error) { console.error('Admin loan request list error:', error.message); res.status(500).json({ error: 'Could not load loan requests.' }); }
+});
+
+// ADMIN LOAN DECISION: approves or rejects a pending request; approval does not disburse funds.
+// POST /api/admin/loan-requests/:id/review with {"status":"approved"} or {"status":"rejected","note":"..."}
+app.post('/api/admin/loan-requests/:id/review', dbRequired, adminReviewRequired, async (req, res) => {
+  const requestId = String(req.params.id || '');
+  const status = String((req.body && req.body.status) || '').toLowerCase();
+  const note = String((req.body && req.body.note) || '').trim().slice(0, 500);
+  if (!/^\d+$/.test(requestId)) return res.status(400).json({ error: 'Invalid loan request ID.' });
+  if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Status must be approved or rejected.' });
+  try {
+    const result = await pool.query("UPDATE loan_requests SET status = $1 WHERE id = $2 AND status = 'pending' RETURNING id, user_id, principal, charge, total_repayment, repayment_days, status, created_at", [status, requestId]);
+    if (!result.rowCount) return res.status(404).json({ error: 'Pending loan request not found; it may already have been reviewed.' });
+    res.json({ request: { ...result.rows[0], principal: Number(result.rows[0].principal), charge: Number(result.rows[0].charge), totalRepayment: Number(result.rows[0].total_repayment), repaymentDays: Number(result.rows[0].repayment_days), adminNote: note || null }, message: status === 'approved' ? 'Loan request approved. Funds have not been disbursed.' : 'Loan request rejected.' });
+  } catch (error) { console.error('Admin loan request review error:', error.message); res.status(500).json({ error: 'Could not review loan request.' }); }
+});
+
+// ============================================================
+// 16. LOAN APPLICATION AND KYC DOCUMENTS
+// ============================================================
 app.get('/api/loan/application-status', dbRequired, authRequired, async (req, res) => {
   try {
     const result = await pool.query('SELECT status, review_note, submitted_at, reviewed_at FROM loan_applications WHERE user_id = $1', [req.user.id]);
@@ -359,6 +495,9 @@ app.post('/api/loan/application', kycLimiter, dbRequired, authRequired, (req, re
   }
 });
 
+// ============================================================
+// 17. LOAN QUOTE CALCULATION
+// ============================================================
 app.post('/api/loan/quote', dbRequired, authRequired, async (req, res) => {
   const verification = await pool.query('SELECT status FROM loan_applications WHERE user_id = $1', [req.user.id]);
   if (!verification.rowCount || verification.rows[0].status !== 'verified') return res.status(403).json({ error: 'Complete and pass identity verification before requesting a loan.' });
@@ -373,6 +512,9 @@ app.post('/api/loan/quote', dbRequired, authRequired, async (req, res) => {
   res.json({ limit, principal, charge, total: principal + charge, days, approved: false, message: 'Indicative quote only. No loan is approved and no money is moved.' });
 });
 
+// ============================================================
+// 18. LOAN REQUEST SUBMISSION
+// ============================================================
 app.post('/api/loan/request', dbRequired, authRequired, async (req, res) => {
   const principal = Number(req.body && req.body.principal);
   const client = await pool.connect();
@@ -400,6 +542,9 @@ app.post('/api/loan/request', dbRequired, authRequired, async (req, res) => {
   } finally { client.release(); }
 });
 
+// ============================================================
+// 19. FALLBACK PAGE AND SERVER STARTUP
+// ============================================================
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 initializeDatabase().catch(error => { console.error('Database initialization failed:', error.message); }).finally(() => {
