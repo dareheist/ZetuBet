@@ -246,7 +246,7 @@ app.get('/api/payments/deposit/:reference/status', dbRequired, authRequired, asy
 app.post('/api/payments/withdraw', dbRequired, authRequired, async (req, res) => {
   const amount = Number(req.body && req.body.amount);
   const wallet = req.body && req.body.wallet === 'loan' ? 'loan' : 'savings';
-  if (!Number.isInteger(amount) || amount < 10 || amount > 1000) return res.status(400).json({ error: 'Enter a whole-KSh withdrawal between KSh 10 and KSh 1,000.' });
+  if (!Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: 'Enter a valid whole-KSh withdrawal amount greater than zero.' });
   const balanceColumn = wallet === 'loan' ? 'loan_wallet_balance' : 'savings_balance';
   const reference = `ZC-W-${req.user.id}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   const client = await pool.connect();
