@@ -107,18 +107,13 @@
 
     $('apply-button').disabled = user.outstandingDebt > 0;
 
-    let strip = $('account-strip');
-
-    if (!strip) {
-      strip = document.createElement('div');
-      strip.id = 'account-strip';
-      strip.className = 'account-strip';
-
-      $('dashboard-view').prepend(strip);
-    }
-
-    strip.textContent =
-      `Welcome, ${user.fullName} · ${user.email || ''} · M-Pesa: ${user.phone}`;
+    const profileName = $('profile-name');
+    const profileEmail = $('profile-email');
+    const profilePhone = $('profile-phone');
+    if (profileName) profileName.textContent = user.fullName || '—';
+    if (profileEmail) profileEmail.textContent = user.email || '—';
+    if (profilePhone) profilePhone.textContent = user.phone || '—';
+    if ($('menu-open')) $('menu-open').hidden = !user;
   }
 
 
@@ -194,7 +189,7 @@
   // ============================================================
 
   function hideAccountPages() {
-    ['loan-view', 'savings-view', 'loan-wallet-view'].forEach((id) => {
+    ['loan-view', 'savings-view', 'loan-wallet-view', 'profile-view', 'loan-info-view', 'history-view', 'help-view'].forEach((id) => {
       $(id).hidden = true;
     });
   }
@@ -631,6 +626,55 @@
     }
   });
 
+
+
+  // ============================================================
+  // 20. PROFILE, MENU DRAWER, DARK MODE AND MOBILE BACK BUTTON
+  // ============================================================
+  const accountPageIds = ['dashboard-view','loan-view','savings-view','loan-wallet-view','profile-view','loan-info-view','history-view','help-view'];
+  function showPage(id, push=true) {
+    accountPageIds.forEach((page) => { const el = $(page); if (el) el.hidden = page !== id; });
+    if (id === 'home') { accountPageIds.forEach((page) => { if ($(page)) $(page).hidden = page !== 'dashboard-view'; }); id='dashboard-view'; }
+    if (push) history.pushState({ zetuPage:id }, '', id === 'dashboard-view' ? '#home' : '#' + id.replace('-view',''));
+    if ($('menu-overlay')) $('menu-overlay').hidden = true;
+    window.scrollTo({top:0, behavior:'auto'});
+  }
+  if ($('menu-open')) $('menu-open').addEventListener('click', () => { $('menu-overlay').hidden = false; });
+  if ($('menu-close')) $('menu-close').addEventListener('click', () => { $('menu-overlay').hidden = true; });
+  if ($('menu-overlay')) $('menu-overlay').addEventListener('click', (e) => { if (e.target === $('menu-overlay')) $('menu-overlay').hidden = true; });
+  document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => {
+    const target=button.dataset.go;
+    if (target === 'home') { showDashboard(); history.pushState({zetuPage:'dashboard-view'}, '', '#home'); }
+    else if (target === 'savings-view') showSavingsWallet();
+    else if (target === 'loan-wallet-view') showLoanWallet();
+    else if (target === 'loan-info-view') showPage(target);
+    else showPage(target);
+  }));
+  if ($('open-savings-wallet')) $('open-savings-wallet').addEventListener('click', showSavingsWallet);
+  if ($('open-loan-wallet')) $('open-loan-wallet').addEventListener('click', showLoanWallet);
+  if ($('open-loan-from-info')) $('open-loan-from-info').addEventListener('click', showLoan);
+  if ($('dark-mode-toggle')) {
+    $('dark-mode-toggle').checked = localStorage.getItem('zetucash-dark-mode') === '1';
+    document.body.classList.toggle('dark-mode', $('dark-mode-toggle').checked);
+    $('dark-mode-toggle').addEventListener('change', () => {
+      document.body.classList.toggle('dark-mode', $('dark-mode-toggle').checked);
+      localStorage.setItem('zetucash-dark-mode', $('dark-mode-toggle').checked ? '1' : '0');
+    });
+  }
+  if ($('menu-logout')) $('menu-logout').addEventListener('click', () => $('logout-button').click());
+  window.addEventListener('popstate', () => {
+    const hash = location.hash.slice(1);
+    if (hash === 'savings') showSavingsWallet();
+    else if (hash === 'loan-wallet') showLoanWallet();
+    else if (hash === 'profile') showPage('profile-view', false);
+    else if (hash === 'loan-info') showPage('loan-info-view', false);
+    else if (hash === 'history') showPage('history-view', false);
+    else if (hash === 'help') showPage('help-view', false);
+    else showDashboard();
+  });
+  // Keep the login panel hidden until session verification finishes to prevent a login flash.
+  $('auth-view').hidden = true;
+  $('dashboard-view').hidden = true;
 
   // ============================================================
   // 19. LOAD EXISTING LOGIN SESSION

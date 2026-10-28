@@ -13,7 +13,7 @@
     <header class="topbar">
       <div class="brandmark"><span>Z</span><i>✦</i></div>
       <div><div class="brand">ZetuCash</div><div class="tagline">Save today. Unlock more tomorrow.</div></div>
-      <button class="demo" id="logout-button" hidden>LOG OUT</button>
+      <button class="demo" id="menu-open" type="button" hidden>☰ MENU</button><button class="demo" id="logout-button" hidden>LOG OUT</button>
     </header>
 
     <section id="auth-view" class="auth-card">
@@ -75,47 +75,20 @@
       <p class="dashboard-hint">Tap above to view your loan options and repayment details.</p>
 
       <section class="wallets">
-        <article class="wallet wallet-clickable" id="savings-wallet-card" role="button" tabindex="0" aria-label="Open Savings Wallet">
-          <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span><button class="wallet-arrow" id="open-savings-wallet" type="button" aria-label="Open Savings Wallet">→</button></div>
+        <article class="wallet" id="savings-wallet-card" tabindex="0">
+          <div class="wallet-head"><span class="wallet-icon">＋</span><span class="label">Savings Wallet</span></div>
           <p>Build your savings to increase your loan limit.</p>
-          <button class="button secondary" id="save-button">＋ Deposit to savings</button>
+          <button class="button secondary" id="save-button">＋ Deposit to savings</button><button class="text-button" id="open-savings-wallet" type="button">Open Savings Wallet</button>
           <button class="text-button" id="withdraw-savings">Withdraw from Savings Wallet</button>
         </article>
-        <article class="wallet wallet-clickable" id="loan-wallet-card" role="button" tabindex="0" aria-label="Open Loan Wallet">
-          <div class="wallet-head"><span class="wallet-icon loan">↗</span><span class="label">Loan Wallet</span><button class="wallet-arrow" id="open-loan-wallet" type="button" aria-label="Open Loan Wallet">→</button></div>
+        <article class="wallet" id="loan-wallet-card" tabindex="0">
+          <div class="wallet-head"><span class="wallet-icon loan">↗</span><span class="label">Loan Wallet</span></div>
           <strong id="loan-wallet">KSh 0</strong>
           <p>Loan funds credited to your wallet</p>
-          <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button>
+          <button class="button secondary" id="withdraw-loan">Withdraw from Loan Wallet</button><button class="text-button" id="open-loan-wallet" type="button">Open Loan Wallet</button>
           <button class="text-button" id="repay-button">View repayment information</button>
         </article>
       </section>
-    </section>
-
-    <section class="wallet-detail card" id="savings-view" hidden>
-      <button class="text-button back-button" id="back-from-savings">← Back to account overview</button>
-      <p class="eyebrow">YOUR MONEY</p><h2>Savings Wallet</h2>
-      <p class="explain">View your savings balance and enter the amount you want to deposit.</p>
-      <div class="wallet-balance-panel"><span>Available savings balance</span><strong id="savings-page-balance">KSh 0</strong></div>
-      <label for="deposit-amount">Deposit amount (KSh)</label>
-      <div class="input-row"><span>KSh</span><input id="deposit-amount" type="number" min="10" step="1" inputmode="numeric" placeholder="Enter amount" /></div>
-      <button class="button main-button" id="savings-deposit-continue" type="button">Continue to deposit</button>
-      <button class="text-button" id="savings-withdraw-entry" type="button">Withdraw from Savings Wallet</button>
-      <p class="fineprint" id="savings-payment-note">Payment status will be shown here. Do not send money outside the app.</p>
-    </section>
-
-    <section class="wallet-detail card" id="loan-wallet-view" hidden>
-      <button class="text-button back-button" id="back-from-loan-wallet">← Back to account overview</button>
-      <p class="eyebrow">LOAN ACCOUNT</p><h2>Loan Wallet</h2>
-      <p class="explain">Your loan funds and repayment summary.</p>
-      <div class="wallet-balance-panel loan-balance-panel"><span>Available Loan Wallet balance</span><strong id="loan-page-balance">KSh 0</strong></div>
-      <div class="wallet-detail-list">
-        <div><span>Outstanding amount to repay</span><strong id="loan-page-repayable">KSh 0</strong></div>
-        <div><span>Loan amount</span><strong id="loan-page-principal">Not available</strong></div>
-        <div><span>Repayment duration</span><strong id="loan-page-duration">Not available</strong></div>
-        <div><span>Repayment status</span><strong id="loan-page-status">No active loan</strong></div>
-      </div>
-      <button class="button secondary" id="loan-wallet-withdraw-entry" type="button">Withdraw from Loan Wallet</button>
-      <p class="fineprint">Loan amount and duration will appear when the approved loan details are available in your account.</p>
     </section>
 
     <section class="apply card loan-view" id="loan-view" hidden>
@@ -155,6 +128,37 @@
         <p class="fineprint">A verified identity does not guarantee loan approval. Loan approval and disbursement must be completed by the authorised lending process.</p>
       </div>
     </section>
+
+
+    <section id="savings-view" class="apply card" hidden>
+      <button class="text-button" id="back-from-savings">← Home</button>
+      <p class="eyebrow">SAVINGS WALLET</p><h2 id="profile-greeting">Your savings</h2>
+      <div class="limit-line"><span>Available savings balance</span><strong id="savings-page-balance">KSh 0</strong></div>
+      <label for="deposit-amount">Deposit amount (KSh)</label><input class="auth-input" id="deposit-amount" type="number" min="1" step="1" value="100" inputmode="numeric">
+      <button class="button main-button" id="savings-deposit-continue">Continue to deposit</button>
+      <p id="savings-payment-note" class="warning" aria-live="polite">Your balance changes only after payment confirmation.</p>
+      <button class="button secondary" id="savings-withdraw-entry">Withdraw from Savings Wallet</button>
+    </section>
+    <section id="loan-wallet-view" class="apply card" hidden>
+      <button class="text-button" id="back-from-loan-wallet">← Home</button>
+      <p class="eyebrow">LOAN WALLET</p><h2>Loan Wallet</h2>
+      <div class="limit-line"><span>Wallet balance</span><strong id="loan-page-balance">KSh 0</strong></div>
+      <div class="limit-line"><span>Outstanding repayment</span><strong id="loan-page-repayable">KSh 0</strong></div>
+      <p id="loan-page-status" class="warning">Checking loan status…</p>
+      <button class="button secondary" id="loan-wallet-withdraw-entry">Withdraw from Loan Wallet</button>
+    </section>
+    <section id="profile-view" class="apply card" hidden>
+      <button class="text-button" data-go="home">← Home</button><p class="eyebrow">YOUR ACCOUNT</p><h2>Profile / Account Details</h2>
+      <div class="limit-line"><span>Full name</span><strong id="profile-name">—</strong></div>
+      <div class="limit-line"><span>Email</span><strong id="profile-email">—</strong></div>
+      <div class="limit-line"><span>M-Pesa phone</span><strong id="profile-phone">—</strong></div>
+    </section>
+    <section id="loan-info-view" class="apply card" hidden><button class="text-button" data-go="home">← Home</button><p class="eyebrow">LOAN INFORMATION</p><h2>Loan information</h2><p>Loan eligibility and limits are calculated by the backend. Identity verification and loan requests are reviewed before approval or disbursement.</p><button class="button main-button" id="open-loan-from-info">View / apply for a loan</button></section>
+    <section id="history-view" class="apply card" hidden><button class="text-button" data-go="home">← Home</button><p class="eyebrow">TRANSACTION HISTORY</p><h2>Transaction History</h2><p>History endpoint and transaction list are not included in the supplied backend API. This page does not fabricate transaction records.</p></section>
+    <section id="help-view" class="apply card" hidden><button class="text-button" data-go="home">← Home</button><p class="eyebrow">HELP CENTRE</p><h2>Help Centre</h2><p>For account or payment help, use the official ZetuCash support contact configured for your service.</p></section>
+    <div id="menu-overlay" class="menu-overlay" hidden>
+      <aside class="menu-panel" aria-label="Navigation menu"><button id="menu-close" class="menu-close">✕</button><h2>ZetuCash</h2><button data-go="home">Home</button><button data-go="profile-view">Profile / Account Details</button><button data-go="savings-view">Savings Wallet</button><button data-go="loan-wallet-view">Loan Wallet</button><button data-go="loan-info-view">Loan information</button><button data-go="history-view">Transaction History</button><button data-go="help-view">Help Centre</button><label class="dark-toggle"><input id="dark-mode-toggle" type="checkbox"> Dark Mode</label><button id="menu-logout" class="logout-link">Log Out</button></aside>
+    </div>
 
     <section class="notice" aria-live="polite">
       <strong id="notice-title">ZetuCash</strong>
