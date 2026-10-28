@@ -42,6 +42,8 @@
   function notice(title, message) {
     $('notice-title').textContent = title;
     $('notice').textContent = message;
+    const box = document.querySelector('.notice');
+    if (box) box.hidden = false;
   }
 
 
@@ -165,7 +167,7 @@
 
       } else if (data.status === 'pending') {
         $('kyc-status').textContent =
-          'Your documents are awaiting review. You cannot request a loan until an authorised reviewer verifies them.';
+          'Application submitted successfully. Status: PENDING. Your documents are awaiting admin review.';
 
         $('kyc-form').hidden = true;
 
@@ -203,6 +205,8 @@
   }
 
   function showSavingsWallet() {
+    if ($('menu-overlay')) $('menu-overlay').hidden = true;
+    history.replaceState({ zetuPage: 'savings-view' }, '', '#savings');
     $('dashboard-view').hidden = true;
 
     hideAccountPages();
@@ -219,6 +223,8 @@
   }
 
   function showLoanWallet() {
+    if ($('menu-overlay')) $('menu-overlay').hidden = true;
+    history.replaceState({ zetuPage: 'loan-wallet-view' }, '', '#loan-wallet');
     $('dashboard-view').hidden = true;
 
     hideAccountPages();
@@ -270,10 +276,7 @@
 
       renderUser(data.user);
 
-      notice(
-        'Logged in successfully',
-        'Your account details have loaded from the database.'
-      );
+      notice('Successfully logged in', 'Welcome back.');
 
     } catch (error) {
       authMessage(error.message);
@@ -308,10 +311,7 @@
 
       renderUser(data.user);
 
-      notice(
-        'Account created',
-        'Your M-Pesa number is saved to your account.'
-      );
+      notice('Successfully registered', 'Your account has been created.');
 
     } catch (error) {
       authMessage(error.message);
@@ -334,10 +334,7 @@
     renderUser(null);
     showLogin();
 
-    notice(
-      'Logged out',
-      'Log in again to view your account.'
-    );
+    notice('Successfully logged out', 'You have been logged out.');
   });
 
 
@@ -411,7 +408,7 @@
         $('savings-page-balance').textContent = money(currentUser?.savingsBalance);
         $('savings-payment-note').textContent =
           `Payment confirmed. ${money(data.amount)} has been added to your savings wallet.`;
-        notice('Deposit successful', 'ZetuPay confirmed your M-Pesa payment and your savings balance has been updated.');
+        notice('Successful deposit', `${money(data.amount)} has been added to your savings wallet.`);
         return;
       }
 
@@ -477,35 +474,58 @@
 
 
   // ============================================================
-  // 13. SAVINGS WALLET WITHDRAWAL
-  // ============================================================
+  // 13-14. SAVINGS AND LOAN WALLET WITHDRAWALS
+  function openWithdrawalForm(wallet) {
+    const id = wallet === 'loan' ? 'loan-withdraw-form' : 'savings-withdraw-form';
+    const form = $(id);
+    if (form) {
+      form.hidden = false;
+      const input = form.querySelector('input[name="amount"]');
+      if (input) input.focus();
+      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+  $('savings-withdraw-entry').addEventListener('click', () => openWithdrawalForm('savings'));
+  $('withdraw-savings').addEventListener('click', () => { showSavingsWallet(); openWithdrawalForm('savings'); });
+  $('loan-wallet-withdraw-entry').addEventListener('click', () => openWithdrawalForm('loan'));
+  $('withdraw-loan').addEventListener('click', () => { showLoanWallet(); openWithdrawalForm('loan'); });
 
-  $('savings-withdraw-entry').addEventListener('click', () => {
-    $('withdraw-savings').click();
-  });
-
-  $('withdraw-savings').addEventListener('click', () => {
-    notice(
-      'Withdrawals not enabled yet',
-      'Your balance has not changed. Savings withdrawals will be available after ZetuPay payout integration is completed and verified.'
-    );
-  });
-
-
-  // ============================================================
-  // 14. LOAN WALLET WITHDRAWAL
-  // ============================================================
-
-  $('loan-wallet-withdraw-entry').addEventListener('click', () => {
-    $('withdraw-loan').click();
-  });
-
-  $('withdraw-loan').addEventListener('click', () => {
-    notice(
-      'Withdrawals not enabled yet',
-      'Loan Wallet withdrawals are not enabled yet. No money has been moved.'
-    );
-  });
+  async function submitWithdrawal(event, wallet) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = form.querySelector('input[name="amount"]');
+    const button = form.querySelector('button[type="submit"]');
+    const status = form.querySelector('[aria-live="polite"]');
+    const amount = Number(input.value);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      status.textContent = 'Enter a valid whole-KSh amount greater than zero.';
+      return;
+    }
+    const balance = wallet === 'loan' ? Number(currentUser?.loanWalletBalance || 0) : Number(currentUser?.savingsBalance || 0);
+    if (amount > balance) { status.textContent = 'Insufficient funds in this wallet.'; return; }
+    button.disabled = true; button.textContent = 'Processing…'; status.textContent = 'Submitting withdrawal request…';
+    try {
+      const data = await api('/api/payments/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) });
+      const fresh = await api('/api/auth/me');
+      renderUser(fresh.user);
+      $('savings-page-balance').textContent = money(fresh.user.savingsBalance);
+      $('loan-page-balance').textContent = money(fresh.user.loanWalletBalance);
+      const state = String(data.status || 'processing').toLowerCase();
+      if (['success','successful','completed','paid'].includes(state)) {
+        notice('Successful withdrawal', `${money(amount)} has been withdrawn from your ${wallet === 'loan' ? 'Loan' : 'Savings'} Wallet.`);
+        status.textContent = 'Successful withdrawal.';
+      } else {
+        notice('Withdrawal submitted', `Your ${money(amount)} withdrawal request is being processed. We will confirm when the payout is complete.`);
+        status.textContent = 'Withdrawal submitted and awaiting payout confirmation.';
+      }
+      form.reset();
+    } catch (error) {
+      status.textContent = error.message;
+      notice('Withdrawal unsuccessful', error.message);
+    } finally { button.disabled = false; button.textContent = 'Withdraw'; }
+  }
+  $('savings-withdraw-form').addEventListener('submit', (event) => submitWithdrawal(event, 'savings'));
+  $('loan-withdraw-form').addEventListener('submit', (event) => submitWithdrawal(event, 'loan'));
 
 
   // ============================================================
@@ -583,13 +603,9 @@
 
       $('kyc-form').hidden = true;
 
-      $('kyc-status').textContent =
-        data.message || 'Your application is pending review.';
+      $('kyc-status').textContent = 'Status: PENDING — your application was submitted successfully and is awaiting admin review.';
 
-      notice(
-        'Verification submitted',
-        'Your ID photos and details have been submitted for review. You cannot request a loan until verification is approved.'
-      );
+      notice('Application submitted successfully', 'Status: PENDING. Your application and documents have been sent for admin review.');
 
     } catch (error) {
       notice('Could not submit application', error.message);

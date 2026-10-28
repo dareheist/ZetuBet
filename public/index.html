@@ -138,6 +138,12 @@
       <button class="button main-button" id="savings-deposit-continue">Continue to deposit</button>
       <p id="savings-payment-note" class="warning" aria-live="polite">Your balance changes only after payment confirmation.</p>
       <button class="button secondary" id="savings-withdraw-entry">Withdraw from Savings Wallet</button>
+      <form id="savings-withdraw-form" class="withdraw-form" hidden>
+        <label for="savings-withdraw-amount">Withdrawal amount (KSh)</label>
+        <input class="auth-input" id="savings-withdraw-amount" name="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Enter amount" required>
+        <button class="button main-button" type="submit">Withdraw</button>
+        <p class="fineprint" aria-live="polite">Enter any whole-KSh amount up to your available wallet balance. Payouts are sent to your registered M-Pesa number.</p>
+      </form>
     </section>
     <section id="loan-wallet-view" class="apply card" hidden>
       <button class="text-button" id="back-from-loan-wallet">← Home</button>
@@ -146,6 +152,12 @@
       <div class="limit-line"><span>Outstanding repayment</span><strong id="loan-page-repayable">KSh 0</strong></div>
       <p id="loan-page-status" class="warning">Checking loan status…</p>
       <button class="button secondary" id="loan-wallet-withdraw-entry">Withdraw from Loan Wallet</button>
+      <form id="loan-withdraw-form" class="withdraw-form" hidden>
+        <label for="loan-withdraw-amount">Withdrawal amount (KSh)</label>
+        <input class="auth-input" id="loan-withdraw-amount" name="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Enter amount" required>
+        <button class="button main-button" type="submit">Withdraw</button>
+        <p class="fineprint" aria-live="polite">Enter any whole-KSh amount up to your available wallet balance. Payouts are sent to your registered M-Pesa number.</p>
+      </form>
     </section>
     <section id="profile-view" class="apply card" hidden>
       <button class="text-button" data-go="home">← Home</button><p class="eyebrow">YOUR ACCOUNT</p><h2>Profile / Account Details</h2>
@@ -160,7 +172,7 @@
       <aside class="menu-panel" aria-label="Navigation menu"><button id="menu-close" class="menu-close">✕</button><h2>ZetuCash</h2><button data-go="home">Home</button><button data-go="profile-view">Profile / Account Details</button><button data-go="savings-view">Savings Wallet</button><button data-go="loan-wallet-view">Loan Wallet</button><button data-go="loan-info-view">Loan information</button><button data-go="history-view">Transaction History</button><button data-go="help-view">Help Centre</button><label class="dark-toggle"><input id="dark-mode-toggle" type="checkbox"> Dark Mode</label><button id="menu-logout" class="logout-link">Log Out</button></aside>
     </div>
 
-    <section class="notice" aria-live="polite">
+    <section class="notice" aria-live="polite" hidden>
       <strong id="notice-title">ZetuCash</strong>
       <p id="notice">Create an account or log in to view your account overview.</p>
     </section>
