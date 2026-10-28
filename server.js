@@ -52,7 +52,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '20kb' }));
+app.use(express.json({ limit: '20kb', verify: (req, _res, buffer) => { req.rawBody = Buffer.from(buffer); } }));
 const kycUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 3, fields: 12 }, fileFilter: (_req, file, cb) => {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(new Error('Upload ID photos and selfie as JPEG, PNG, or WebP images only.'));
   cb(null, true);
@@ -162,35 +162,84 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', app: 'ZetuCash', 
 // Keep the secret key on the server only.
 // ============================================================
 const ZETUPAY_BASE = 'https://pay.zetupay.co.ke/api/v1';
-async function zetupayPost(endpoint, body) {
+async function zetupayRequest(endpoint, { method = 'GET', body, idempotencyKey } = {}) {
   const key = process.env.ZETUPAY_SECRET_KEY;
   if (!key) throw new Error('Payments are not configured. Add ZETUPAY_SECRET_KEY in Railway Variables.');
-  const response = await fetch(`${ZETUPAY_BASE}${endpoint}`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+  const headers = { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const response = await fetch(`${ZETUPAY_BASE}${endpoint}`, {
+    method,
+    headers,
+    ...(body ? { body: JSON.stringify(body) } : {}),
+    signal: AbortSignal.timeout(20000)
+  });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.message || data.error || `ZetuPay request failed (${response.status}).`);
   return data;
 }
+
 // ============================================================
-// 8. DEPOSIT PAYMENT INITIATION
-// Minimum deposit: KSh 1; no application-level maximum.
+// 8. DEPOSIT PAYMENT INITIATION — DIRECT M-PESA STK PUSH
+// No checkout redirect. ZetuPay prompts the user's registered phone.
 // ============================================================
 app.post('/api/payments/deposit', dbRequired, authRequired, async (req, res) => {
   const amount = Number(req.body && req.body.amount);
-  if (!Number.isSafeInteger(amount) || amount < 1) return res.status(400).json({ error: 'Enter a whole-KSh deposit amount of at least KSh 1.' });
-  if (!FRONTEND_URL || !/^https:\/\//i.test(FRONTEND_URL)) return res.status(503).json({ error: 'Set PUBLIC_APP_URL to the full HTTPS address of the ZetuCash frontend in Railway Variables.' });
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 250000) {
+    return res.status(400).json({ error: 'Enter a whole-KSh deposit amount from KSh 1 to KSh 250,000.' });
+  }
   const reference = `ZC-D-${req.user.id}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   try {
     await pool.query("INSERT INTO payment_transactions (user_id,reference,kind,wallet,amount,status) VALUES ($1,$2,'deposit','savings',$3,'pending')", [req.user.id, reference, amount]);
-    const result = await zetupayPost('/payment/initiate', { amount, phoneNumber: req.user.phone_e164, reference, currency: 'KES', redirectUrl: `${FRONTEND_URL}/?payment=return`, identifier: String(req.user.id) });
+    const result = await zetupayRequest('/payment/stk-push', {
+      method: 'POST',
+      idempotencyKey: reference,
+      body: { amount, phoneNumber: req.user.phone_e164, reference, identifier: String(req.user.id), currency: 'KES' }
+    });
     const data = result.data || result;
-    if (!data.checkoutUrl) throw new Error('ZetuPay did not return a checkout URL. Check your ZetuPay account and API response.');
-    res.json({ checkoutUrl: data.checkoutUrl, reference, status: data.status || 'pending' });
+    const paymentKey = data.paymentKey || data.payment_key;
+    const providerId = paymentKey || data.waveTransactionId || data.transactionId || null;
+    if (!result.success || !paymentKey) throw new Error(result.message || 'ZetuPay did not confirm that the STK Push request was created.');
+    await pool.query("UPDATE payment_transactions SET provider_id=$1,status=$2,updated_at=NOW() WHERE reference=$3", [providerId, String(data.status || 'processing').toLowerCase(), reference]);
+    return res.status(202).json({ message: 'STK Push sent. Check your phone and enter your M-Pesa PIN.', reference, paymentKey, status: data.status || 'processing' });
   } catch (error) {
     await pool.query("UPDATE payment_transactions SET status='failed',updated_at=NOW() WHERE reference=$1 AND status='pending'", [reference]).catch(() => {});
-    console.error('ZetuPay deposit initiation failed:', error.message);
-    res.status(502).json({ error: error.message || 'Could not start the deposit. No balance was changed.' });
+    console.error('ZetuPay STK Push initiation failed:', error.message);
+    return res.status(502).json({ error: error.message || 'Could not send the M-Pesa prompt. No balance was changed.' });
   }
 });
+
+// ============================================================
+// 8A. DEPOSIT STATUS — VERIFY WITH ZETUPAY WITHOUT A REDIRECT
+// Used by the frontend while the user approves or cancels the prompt.
+// ============================================================
+app.get('/api/payments/deposit/:reference/status', dbRequired, authRequired, async (req, res) => {
+  const reference = String(req.params.reference || '');
+  const found = await pool.query("SELECT id,reference,provider_id,amount,status FROM payment_transactions WHERE reference=$1 AND user_id=$2 AND kind='deposit'", [reference, req.user.id]);
+  if (!found.rowCount) return res.status(404).json({ error: 'Deposit request not found.' });
+  const tx = found.rows[0];
+  if (tx.status === 'success') return res.json({ reference, status: 'success', amount: Number(tx.amount) });
+  if (!tx.provider_id) return res.json({ reference, status: tx.status });
+  try {
+    const result = await zetupayRequest(`/payment/stk-push/${encodeURIComponent(tx.provider_id)}`);
+    const data = result.data || result;
+    const status = String(data.status || tx.status).toLowerCase();
+    if (status === 'success') {
+      if (Number(data.amount) !== Number(tx.amount) || String(data.reference || reference) !== reference) {
+        return res.status(409).json({ error: 'The provider payment details did not match this deposit. Please contact support.' });
+      }
+      await finalizeDepositSuccess(reference, data);
+      return res.json({ reference, status: 'success', amount: Number(tx.amount), receiptNumber: data.receiptNumber || null });
+    }
+    if (['failed', 'cancelled', 'expired'].includes(status)) {
+      await pool.query("UPDATE payment_transactions SET status=$1,updated_at=NOW() WHERE reference=$2 AND status<>'success'", [status, reference]);
+    }
+    return res.json({ reference, status });
+  } catch (error) {
+    console.error('ZetuPay deposit status check failed:', error.message);
+    return res.status(502).json({ error: 'Could not check the payment yet. Your balance has not been changed.' });
+  }
+});
+
 // ============================================================
 // 9. WITHDRAWAL AND PAYOUT INITIATION
 // ============================================================
@@ -227,70 +276,101 @@ app.post('/api/payments/withdraw', dbRequired, authRequired, async (req, res) =>
   } finally { client.release(); }
 });
 // ============================================================
-// 10. ZETUPAY PAYMENT WEBHOOK — DEPOSIT CONFIRMATION
-// URL: POST /webhooks/zetupay
-// Credits a deposit only after a verified payment.success event.
+// 10. ZETUPAY WEBHOOK SIGNATURE VERIFICATION AND DEPOSIT CREDITING
+// ZetuPay signs the exact raw request body using the live Secret Key.
 // ============================================================
-async function processZetuPayWebhook(req, res, expectedKind) {
-  const expected = process.env.ZETUPAY_WEBHOOK_SECRET || process.env.ZETUPAY_SECRET_KEY || '';
-  const supplied = String(req.get('x-zetupay-secret') || '');
-  if (!expected || supplied.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) {
-    return res.status(401).json({ error: 'Invalid webhook secret.' });
-  }
-  const event = String(req.body && req.body.event || '').toLowerCase();
-  const data = req.body && req.body.data || {};
-  const reference = String(data.reference || data.identifier || '');
-  if (!reference) return res.status(400).json({ error: 'Missing transaction reference.' });
-  if (!pool) return res.status(503).json({ error: 'Database is not configured.' });
+function verifyZetuPaySignature(req) {
+  const key = process.env.ZETUPAY_SECRET_KEY || '';
+  const header = String(req.get('x-zetupay-signature') || '');
+  if (!key || !Buffer.isBuffer(req.rawBody) || !header) return false;
+  const parts = Object.fromEntries(header.split(',').map((part) => {
+    const index = part.indexOf('=');
+    return index < 0 ? [part, ''] : [part.slice(0, index).trim(), part.slice(index + 1).trim()];
+  }));
+  const timestamp = Number(parts.t);
+  if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) >= 300 || !parts.v1) return false;
+  const expected = crypto.createHmac('sha256', key).update(`${parts.t}.${req.rawBody.toString('utf8')}`).digest('hex');
+  const actualBuffer = Buffer.from(String(parts.v1));
+  const expectedBuffer = Buffer.from(expected);
+  return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
+}
 
+async function finalizeDepositSuccess(reference, data) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const found = await client.query('SELECT * FROM payment_transactions WHERE reference=$1 FOR UPDATE', [reference]);
-    if (!found.rowCount) {
-      await client.query('ROLLBACK');
-      return res.status(200).json({ received: true, ignored: true });
-    }
+    const found = await client.query("SELECT * FROM payment_transactions WHERE reference=$1 AND kind='deposit' FOR UPDATE", [reference]);
+    if (!found.rowCount) { await client.query('ROLLBACK'); return false; }
     const tx = found.rows[0];
-    if (tx.kind !== expectedKind) {
+    if (Number(data.amount) !== Number(tx.amount) || String(data.reference || reference) !== reference) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Webhook endpoint does not match transaction type.' });
+      throw new Error('Payment amount or reference does not match the deposit.');
     }
-    const providerId = data.waveTransactionId || data.transactionId || data.id || null;
-    if (providerId) {
-      await client.query('UPDATE payment_transactions SET provider_id=COALESCE(provider_id,$1) WHERE id=$2', [String(providerId), tx.id]);
-    }
-
-    if (expectedKind === 'deposit' && event === 'payment.success' && tx.status !== 'success') {
-      if (Number(data.amount) !== Number(tx.amount)) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Payment amount does not match reference.' });
-      }
+    if (tx.status !== 'success') {
       await client.query('UPDATE users SET savings_balance=savings_balance+$1 WHERE id=$2', [tx.amount, tx.user_id]);
-      await client.query("UPDATE payment_transactions SET status='success',updated_at=NOW() WHERE id=$1", [tx.id]);
-    } else if (expectedKind === 'withdrawal' && ['payout.failed','payout.failure','payout.rejected','payout.cancelled'].includes(event) && !tx.refunded) {
-      const col = tx.wallet === 'loan' ? 'loan_wallet_balance' : 'savings_balance';
-      await client.query(`UPDATE users SET ${col}=${col}+$1 WHERE id=$2`, [tx.amount, tx.user_id]);
-      await client.query("UPDATE payment_transactions SET status='failed',refunded=TRUE,updated_at=NOW() WHERE id=$1", [tx.id]);
-    } else if (expectedKind === 'withdrawal' && ['payout.success','payout.completed','payout.successful'].includes(event)) {
-      await client.query("UPDATE payment_transactions SET status='success',updated_at=NOW() WHERE id=$1 AND status<>'success'", [tx.id]);
+      await client.query("UPDATE payment_transactions SET status='success',provider_id=COALESCE($1,provider_id),updated_at=NOW() WHERE id=$2", [data.waveTransactionId || data.paymentKey || null, tx.id]);
+    } else if (data.waveTransactionId) {
+      await client.query('UPDATE payment_transactions SET provider_id=COALESCE($1,provider_id),updated_at=NOW() WHERE id=$2', [data.waveTransactionId, tx.id]);
     }
     await client.query('COMMIT');
-    return res.json({ received: true });
+    return true;
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error(`ZetuPay ${expectedKind} webhook error:`, error.message);
-    return res.status(500).json({ error: 'Webhook processing failed.' });
-  } finally {
-    client.release();
+    throw error;
+  } finally { client.release(); }
+}
+
+async function processZetuPayWebhook(req, res, expectedKind) {
+  if (!verifyZetuPaySignature(req)) return res.status(401).json({ error: 'Invalid ZetuPay webhook signature.' });
+  if (!pool) return res.status(503).json({ error: 'Database is not configured.' });
+  let payload;
+  try { payload = JSON.parse(req.rawBody.toString('utf8')); }
+  catch (_) { return res.status(400).json({ error: 'Invalid webhook JSON.' }); }
+
+  // ZetuPay payment callbacks are top-level transactions; payout callbacks
+  // use top-level status, payoutID and identifier fields.
+  if (expectedKind === 'deposit') {
+    const reference = String(payload.reference || '');
+    if (!reference) return res.status(400).json({ error: 'Missing transaction reference.' });
+    if (String(payload.status || '').toLowerCase() !== 'success') return res.status(200).json({ received: true, ignored: true });
+    try {
+      await finalizeDepositSuccess(reference, payload);
+      return res.status(200).json({ received: true });
+    } catch (error) {
+      console.error('ZetuPay deposit webhook error:', error.message);
+      return res.status(400).json({ error: 'Payment verification failed.' });
+    }
   }
+
+  const reference = String(payload.identifier || '');
+  if (!reference) return res.status(400).json({ error: 'Missing payout identifier.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found = await client.query("SELECT * FROM payment_transactions WHERE reference=$1 AND kind='withdrawal' FOR UPDATE", [reference]);
+    if (!found.rowCount) { await client.query('ROLLBACK'); return res.status(200).json({ received: true, ignored: true }); }
+    const tx = found.rows[0];
+    const status = String(payload.status || '').toLowerCase();
+    if (['failed', 'failure', 'rejected', 'cancelled'].includes(status) && !tx.refunded && tx.status !== 'success') {
+      const col = tx.wallet === 'loan' ? 'loan_wallet_balance' : 'savings_balance';
+      await client.query(`UPDATE users SET ${col}=${col}+$1 WHERE id=$2`, [tx.amount, tx.user_id]);
+      await client.query("UPDATE payment_transactions SET status='failed',refunded=TRUE,provider_id=COALESCE($1,provider_id),updated_at=NOW() WHERE id=$2", [payload.payoutID || null, tx.id]);
+    } else if (['completed', 'success', 'successful'].includes(status) && tx.status !== 'success') {
+      await client.query("UPDATE payment_transactions SET status='success',provider_id=COALESCE($1,provider_id),updated_at=NOW() WHERE id=$2", [payload.payoutID || null, tx.id]);
+    }
+    await client.query('COMMIT');
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('ZetuPay payout webhook error:', error.message);
+    return res.status(500).json({ error: 'Webhook processing failed.' });
+  } finally { client.release(); }
 }
 app.post('/webhooks/zetupay', (req, res) => processZetuPayWebhook(req, res, 'deposit'));
 
 // ============================================================
 // 11. ZETUPAY PAYOUT WEBHOOK — WITHDRAWAL RESULT
 // URL: POST /webhooks/zetupay/payout
-// Marks successful payouts or refunds failed payouts once.
 // ============================================================
 app.post('/webhooks/zetupay/payout', (req, res) => processZetuPayWebhook(req, res, 'withdrawal'));
 
