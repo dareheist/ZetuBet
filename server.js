@@ -437,6 +437,20 @@ function safeUser(user) {
 // ============================================================
 // 15. ADMIN ACCESS, KYC REVIEW AND LOAN REQUEST APPROVAL/REJECTION
 // ============================================================
+// ADMIN DASHBOARD DATA: users, balances, transactions and all loan applications.
+app.get('/api/admin/dashboard', dbRequired, adminReviewRequired, async (_req, res) => {
+  try {
+    const [users, tx, applications, loans, totals] = await Promise.all([
+      pool.query(`SELECT id,full_name,email,phone_e164,savings_balance,loan_wallet_balance,outstanding_debt,created_at FROM users ORDER BY created_at DESC LIMIT 1000`),
+      pool.query(`SELECT t.id,t.user_id,u.full_name,u.email,u.phone_e164,t.reference,t.kind,t.wallet,t.amount,t.status,t.created_at,t.updated_at FROM payment_transactions t JOIN users u ON u.id=t.user_id ORDER BY t.created_at DESC LIMIT 1000`),
+      pool.query(`SELECT a.id,a.user_id,u.full_name,u.email,u.phone_e164,a.date_of_birth,a.county,a.town,a.physical_address,a.employment_status,a.monthly_income,a.loan_purpose,a.status,a.review_note,a.submitted_at,a.reviewed_at FROM loan_applications a JOIN users u ON u.id=a.user_id ORDER BY a.submitted_at DESC LIMIT 500`),
+      pool.query(`SELECT r.id,r.user_id,u.full_name,u.email,u.phone_e164,r.principal,r.charge,r.total_repayment,r.repayment_days,r.status,r.created_at FROM loan_requests r JOIN users u ON u.id=r.user_id ORDER BY r.created_at DESC LIMIT 1000`),
+      pool.query(`SELECT COUNT(*)::int AS users, COALESCE(SUM(savings_balance),0) AS savings, COALESCE(SUM(loan_wallet_balance),0) AS loan_wallets, COALESCE(SUM(outstanding_debt),0) AS debt FROM users`)
+    ]);
+    res.json({users:users.rows.map(r=>({...r,savingsBalance:Number(r.savings_balance),loanWalletBalance:Number(r.loan_wallet_balance),outstandingDebt:Number(r.outstanding_debt),loanLimit:Math.floor(Number(r.savings_balance)*1.5)})),transactions:tx.rows.map(r=>({...r,amount:Number(r.amount)})),applications:applications.rows,loans:loans.rows.map(r=>({...r,principal:Number(r.principal),charge:Number(r.charge),totalRepayment:Number(r.total_repayment),repaymentDays:Number(r.repayment_days)})),stats:{userCount:totals.rows[0].users,savingsTotal:Number(totals.rows[0].savings),loanWalletTotal:Number(totals.rows[0].loan_wallets),outstandingDebtTotal:Number(totals.rows[0].debt)}});
+  } catch (error) { console.error('Admin dashboard data error:',error.message); res.status(500).json({error:'Could not load dashboard data.'}); }
+});
+
 // ADMIN REVIEW: protect these endpoints with a separate secret; never expose it in browser code.
 function adminReviewRequired(req, res, next) {
   const configured = process.env.ADMIN_REVIEW_TOKEN || '';
@@ -612,9 +626,12 @@ app.post('/api/loan/request', dbRequired, authRequired, async (req, res) => {
     if (active.rowCount) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'You already have a loan request being processed or an active loan.' }); }
     const charge = Math.round(principal * (20 / 150));
     const days = principal <= 500 ? 14 : principal <= 1500 ? 21 : principal <= 5000 ? 30 : principal <= 10000 ? 45 : 60;
-    const result = await client.query("INSERT INTO loan_requests (user_id,principal,charge,total_repayment,repayment_days,status) VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id", [req.user.id,principal,charge,principal+charge,days]);
+    // Application approval authorizes borrowing; this request is the customer's separate decision to take a specific amount.
+    // Credit only the chosen principal, never the full indicative limit, and record the debt atomically.
+    const result = await client.query("INSERT INTO loan_requests (user_id,principal,charge,total_repayment,repayment_days,status) VALUES ($1,$2,$3,$4,$5,'disbursed') RETURNING id,created_at", [req.user.id,principal,charge,principal+charge,days]);
+    await client.query('UPDATE users SET loan_wallet_balance=loan_wallet_balance+$1, outstanding_debt=outstanding_debt+$2 WHERE id=$3', [principal,principal+charge,req.user.id]);
     await client.query('COMMIT');
-    res.status(201).json({ status: 'pending', requestId: result.rows[0].id, principal, charge, total: principal+charge, days, message: 'Your loan request has been sent for review. It is not approved and no funds have been disbursed.' });
+    res.status(201).json({ status: 'disbursed', requestId: result.rows[0].id, principal, charge, total: principal+charge, days, createdAt: result.rows[0].created_at, message: `KSh ${principal} has been credited to your Loan Wallet. Your approved limit was not transferred; only the amount you selected was disbursed.` });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     console.error('Loan request error:', error.message);
